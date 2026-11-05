@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginAdmin } from '../api/auth';
-import { Shield, Mail, Lock, Eye, EyeOff, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +15,6 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If already authenticated, redirect
   React.useEffect(() => {
     if (isAuthenticated) {
       const origin = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
@@ -28,7 +27,7 @@ export const LoginPage: React.FC = () => {
     setError(null);
 
     if (!email || !password) {
-      setError('Please provide both email and password.');
+      setError('Please enter both email and password.');
       return;
     }
 
@@ -40,131 +39,103 @@ export const LoginPage: React.FC = () => {
       navigate(origin, { replace: true });
     } catch (err: any) {
       const message =
-        err.response?.data?.message || 'Login failed. Please verify your credentials.';
+        err.response?.data?.message || 'Invalid email or password. Please try again.';
       setError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleFillCredentials = () => {
-    setEmail('admin@ace.com');
-    setPassword('Admin@12345');
-    setError(null);
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      {/* Background ambient lighting */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-sky-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* Brand header */}
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center items-center px-4 py-12">
+      <div className="w-full max-w-sm">
+        {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 p-0.5 shadow-xl shadow-indigo-500/20 mb-4">
-            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-              <Sparkles className="w-7 h-7 text-indigo-400" />
-            </div>
+          <div className="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-zinc-900 border border-zinc-800 text-white font-bold tracking-tight text-sm mb-4 shadow-sm">
+            ACE
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">ACE Admin Portal</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Sign in to manage candidate inquiries and submissions
+          <h1 className="text-xl font-semibold text-zinc-100 tracking-tight">
+            Sign in to Admin Portal
+          </h1>
+          <p className="text-xs text-zinc-400 mt-1.5">
+            Enter your credentials to access the console
           </p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-7 shadow-2xl shadow-black/50">
+        {/* Login Box */}
+        <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 shadow-xl">
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start space-x-2.5">
+            <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start space-x-2">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-400" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email field */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Admin Email
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Email
               </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@ace.com"
-                  required
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition"
-                />
-              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@ace.com"
+                autoComplete="email"
+                required
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition"
+              />
             </div>
 
-            {/* Password field */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-medium text-zinc-300">
+                  Password
+                </label>
+              </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
+                  autoComplete="current-password"
                   required
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition"
+                  className="w-full px-3 py-2 pr-10 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition duration-150 flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/25 disabled:opacity-50"
+              className="w-full mt-2 py-2 px-4 rounded-lg text-sm font-medium text-zinc-950 bg-zinc-100 hover:bg-white active:bg-zinc-200 transition flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50 cursor-pointer"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Signing In...</span>
+                  <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+                  <span>Signing in...</span>
                 </>
               ) : (
-                <>
-                  <Shield className="w-4 h-4" />
-                  <span>Sign In as Admin</span>
-                </>
+                <span>Sign in</span>
               )}
             </button>
           </form>
-
-          {/* Quick fill helper for local dev / testing */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span>Development credentials:</span>
-            <button
-              type="button"
-              onClick={handleFillCredentials}
-              className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 underline underline-offset-4 decoration-indigo-500/40"
-            >
-              Autofill admin
-            </button>
-          </div>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-500 mt-6">
-          ACE (Ace Community Express) &bull; Brototype Platform
+        <p className="text-center text-xs text-zinc-400 mt-6">
+          ACE Community Express &bull; Brototype
         </p>
       </div>
     </div>
   );
 };
-

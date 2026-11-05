@@ -22,7 +22,6 @@ export const Pagination: React.FC<PaginationProps> = ({
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
 
-  // Generate page numbers
   const getPageNumbers = () => {
     const list: (number | string)[] = [];
     const maxVisible = 5;
@@ -47,26 +46,26 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1 py-2 text-xs text-slate-400">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1 py-2 text-xs text-zinc-400">
       <div>
-        Showing <span className="font-semibold text-slate-200">{start}</span> to{' '}
-        <span className="font-semibold text-slate-200">{end}</span> of{' '}
-        <span className="font-semibold text-slate-200">{total}</span> submissions
+        Showing <span className="font-medium text-zinc-200">{start}</span>–
+        <span className="font-medium text-zinc-200">{end}</span> of{' '}
+        <span className="font-medium text-zinc-200">{total}</span>
       </div>
 
-      <div className="flex items-center space-x-1.5">
+      <div className="flex items-center space-x-1">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition"
+          className="p-1 rounded border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-3.5 h-3.5" />
         </button>
 
         {getPageNumbers().map((p, idx) => {
           if (p === '...') {
             return (
-              <span key={idx} className="px-2 py-1 text-slate-600">
+              <span key={idx} className="px-1.5 py-1 text-zinc-600">
                 ...
               </span>
             );
@@ -77,10 +76,10 @@ export const Pagination: React.FC<PaginationProps> = ({
             <button
               key={idx}
               onClick={() => onPageChange(Number(p))}
-              className={`min-w-[32px] h-8 px-2 rounded-lg font-medium transition ${
+              className={`min-w-[28px] h-7 px-1.5 rounded text-xs transition cursor-pointer ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-900/60 border border-slate-800/80 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                  : 'bg-zinc-900 border border-zinc-800 text-zinc-300 hover:bg-zinc-800'
               }`}
             >
               {p}
@@ -91,12 +90,11 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= pages}
-          className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition"
+          className="p-1 rounded border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
   );
 };
-

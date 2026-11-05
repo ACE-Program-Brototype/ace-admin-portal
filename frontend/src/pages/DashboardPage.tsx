@@ -8,7 +8,7 @@ import { FilterBar } from '../components/FilterBar';
 import { SubmissionsTable } from '../components/SubmissionsTable';
 import { Pagination } from '../components/Pagination';
 import { SubmissionDetailModal } from '../components/SubmissionDetailModal';
-import { AlertTriangle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
   const [page, setPage] = useState<number>(1);
@@ -23,12 +23,11 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-      setPage(1); // Reset to page 1 on search
-    }, 350);
+      setPage(1);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Reset to page 1 when filters change
   const handleStudentFilterChange = (val: string) => {
     setStudentFilter(val);
     setPage(1);
@@ -55,7 +54,6 @@ export const DashboardPage: React.FC = () => {
   const hasActiveFilters =
     debouncedSearch.trim() !== '' || studentFilter !== 'all' || statusFilter !== 'all';
 
-  // TanStack Query for submissions caching and background sync
   const {
     data,
     isLoading,
@@ -64,7 +62,16 @@ export const DashboardPage: React.FC = () => {
     refetch,
     isFetching
   } = useQuery({
-    queryKey: ['submissions', { page, limit, status: statusFilter, isBrototypeStudent: studentFilter, search: debouncedSearch }],
+    queryKey: [
+      'submissions',
+      {
+        page,
+        limit,
+        status: statusFilter,
+        isBrototypeStudent: studentFilter,
+        search: debouncedSearch
+      }
+    ],
     queryFn: () =>
       fetchSubmissions({
         page,
@@ -73,7 +80,7 @@ export const DashboardPage: React.FC = () => {
         isBrototypeStudent: studentFilter,
         search: debouncedSearch
       }),
-    staleTime: 1000 * 15, // 15 seconds
+    staleTime: 1000 * 15,
     refetchOnWindowFocus: true
   });
 
@@ -83,28 +90,22 @@ export const DashboardPage: React.FC = () => {
   const count = data?.count || 0;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Page Title & Context */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Form Submissions Console</h1>
-            <p className="text-xs text-slate-400">
-              Real-time candidate submissions with MongoDB persistence & Google Sheets replication
-            </p>
-          </div>
-          <div className="flex items-center space-x-2 text-xs text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Live Data Feed</span>
-          </div>
+        {/* Title Header */}
+        <div className="mb-6">
+          <h1 className="text-lg font-semibold text-zinc-100 tracking-tight">Inquiries</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Manage contact form submissions and Google Sheets replication.
+          </p>
         </div>
 
-        {/* High level metrics */}
+        {/* Metrics Cards */}
         <StatsCards total={total} submissions={submissions} isLoading={isLoading} />
 
-        {/* Filters and controls */}
+        {/* Filters */}
         <FilterBar
           search={search}
           onSearchChange={setSearch}
@@ -120,32 +121,30 @@ export const DashboardPage: React.FC = () => {
           hasActiveFilters={hasActiveFilters}
         />
 
-        {/* Error state */}
+        {/* Error message */}
         {isError && (
-          <div className="mb-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
+          <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-              <span>
-                Failed to load submissions: {(error as any)?.response?.data?.message || (error as Error).message}
-              </span>
+              <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+              <span>{(error as any)?.response?.data?.message || (error as Error).message}</span>
             </div>
             <button
               onClick={() => refetch()}
-              className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-lg text-xs font-medium transition"
+              className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded text-xs font-medium transition cursor-pointer"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Submissions table */}
+        {/* Table */}
         <SubmissionsTable
           submissions={submissions}
           isLoading={isLoading}
           onSelectSubmission={setSelectedSubmission}
         />
 
-        {/* Pagination bar */}
+        {/* Pagination */}
         <Pagination
           page={page}
           pages={pages}
@@ -156,7 +155,7 @@ export const DashboardPage: React.FC = () => {
         />
       </main>
 
-      {/* Details Modal */}
+      {/* Modal */}
       <SubmissionDetailModal
         submission={selectedSubmission}
         onClose={() => setSelectedSubmission(null)}
@@ -164,4 +163,3 @@ export const DashboardPage: React.FC = () => {
     </div>
   );
 };
-
