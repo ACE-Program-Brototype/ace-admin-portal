@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import contactRoutes from './contactRoutes.js';
+import authRoutes from './authRoutes.js';
 
 const router = Router();
 
@@ -11,6 +12,9 @@ router.get('/health', (req, res) => {
     uptime: process.uptime()
   });
 });
+
+// Authentication routes (POST /api/auth/login, GET /api/auth/me)
+router.use('/auth', authRoutes);
 
 // Contact form submission endpoint (POST /api/contact)
 router.use('/contact', contactRoutes);

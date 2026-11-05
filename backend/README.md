@@ -39,15 +39,21 @@ ace-backend/
     ├── config/
     │   └── db.js         # MongoDB connection targeting database "ace"
     ├── controllers/
+    │   ├── authController.js    # Admin JWT authentication
     │   └── contactController.js # Accepts data, saves to DB & triggers background sync
     ├── middleware/
+    │   ├── authMiddleware.js    # JWT bearer authentication middleware
     │   ├── errorHandler.js      # Global error logging & formatting
     │   └── notFound.js          # 404 handler
     ├── models/
+    │   ├── Admin.js             # Mongoose model for Admin user
     │   └── ContactSubmission.js # Mongoose model for contact submissions
     ├── routes/
     │   ├── apiRoutes.js         # API root routing
+    │   ├── authRoutes.js        # POST /api/auth/login, GET /api/auth/me
     │   └── contactRoutes.js     # POST /api/contact endpoint
+    ├── scripts/
+    │   └── seedAdmin.js         # Initial admin user seeder
     ├── services/
     │   └── googleSheetService.js # Background Google Sheets Web App dispatcher
     ├── utils/
@@ -59,6 +65,37 @@ ace-backend/
 ---
 
 ## Endpoint Specification
+
+### `POST /api/auth/login`
+Admin JWT authentication endpoint. Accepts `application/json`.
+
+#### Payload:
+```json
+{
+  "email": "admin@ace.com",
+  "password": "Admin@12345"
+}
+```
+
+#### Success Response (`200 OK`):
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "data": {
+    "id": "6aec98953de5fe3fd56bcf3a",
+    "email": "admin@ace.com",
+    "name": "ACE Administrator",
+    "role": "admin"
+  }
+}
+```
+
+### `GET /api/auth/me`
+Protected admin profile endpoint. Requires `Authorization: Bearer <token>` header.
+
+---
 
 ### `POST /api/contact`
 Accepts `application/json` or `multipart/form-data` (`FormData`).
