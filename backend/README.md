@@ -141,6 +141,50 @@ Accepts `application/json` or `multipart/form-data` (`FormData`).
 
 ---
 
+### `GET /api/contact`
+Protected endpoint for authenticated admin. Lists submitted contact forms with pagination, status filtering, and search.
+
+- **Headers**: `Authorization: Bearer <token>`
+- **Query Parameters**:
+  - `page`: Page number (default: 1)
+  - `limit`: Items per page (default: 20, max: 100)
+  - `status`: Filter by sheet sync status (`pending`, `synced`, `failed`)
+  - `isBrototypeStudent`: Filter by student status (`yes`, `no`)
+  - `search`: Keyword search over name, email, phone, batchNumber
+  - `sort`: Sort expression (default: `-createdAt`)
+
+#### Success Response (`200 OK`):
+```json
+{
+  "success": true,
+  "count": 1,
+  "total": 1,
+  "page": 1,
+  "pages": 1,
+  "data": [
+    {
+      "_id": "6ace147f0c2ef6d122d8a61b",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "9876543210",
+      "isBrototypeStudent": "yes",
+      "batchNumber": "BCE319",
+      "counsellorName": "Jane Smith",
+      "message": "I would like to inquire about the program.",
+      "sheetSyncStatus": "synced",
+      "sheetSyncedAt": "2026-10-13T11:22:40.120Z",
+      "sheetSyncAttempts": 1,
+      "createdAt": "2026-10-13T11:22:39.696Z"
+    }
+  ]
+}
+```
+
+### `GET /api/contact/:id`
+Protected endpoint for authenticated admin. Retrieves a single submission by its MongoDB ID. Requires `Authorization: Bearer <token>`.
+
+---
+
 ## Run Locally
 
 ```bash
