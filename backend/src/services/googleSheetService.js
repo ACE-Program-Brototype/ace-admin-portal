@@ -32,9 +32,6 @@ export const syncToGoogleSheets = async (submission) => {
       if (submission.batchNumber) {
         formData.append('batchNumber', submission.batchNumber);
       }
-      if (submission.counsellorName) {
-        formData.append('counsellorName', submission.counsellorName);
-      }
     }
 
     if (submission.message) {

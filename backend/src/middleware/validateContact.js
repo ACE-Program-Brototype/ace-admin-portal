@@ -6,7 +6,7 @@ import { logger } from '../utils/logger.js';
  * - email: required, strictly validates email format
  * - phone: required, accepts numbers only (10 to 15 digits)
  * - isBrototypeStudent: required ('yes' or 'no')
- * - batchNumber & counsellorName: required only if isBrototypeStudent === 'yes'
+ * - batchNumber: required only if isBrototypeStudent === 'yes'
  * - message: optional
  */
 export const validateContactForm = (req, res, next) => {
@@ -63,22 +63,14 @@ export const validateContactForm = (req, res, next) => {
 
   // 5. Conditional validation for Brototype students
   let batchNumber = '';
-  let counsellorName = '';
 
   if (isBrototypeStudent === 'yes') {
     batchNumber = typeof body.batchNumber === 'string' ? body.batchNumber.trim() : '';
-    counsellorName = typeof body.counsellorName === 'string' ? body.counsellorName.trim() : '';
 
     if (!batchNumber) {
       errors.batchNumber = 'Batch number is required for Brototype students';
     } else if (batchNumber.length < 2 || batchNumber.length > 30) {
       errors.batchNumber = 'Batch number must be between 2 and 30 characters';
-    }
-
-    if (!counsellorName) {
-      errors.counsellorName = 'Counsellor name is required for Brototype students';
-    } else if (counsellorName.length < 2 || counsellorName.length > 70) {
-      errors.counsellorName = 'Counsellor name must be between 2 and 70 characters';
     }
   }
 
@@ -106,7 +98,6 @@ export const validateContactForm = (req, res, next) => {
   req.body.phone = phone;
   req.body.isBrototypeStudent = isBrototypeStudent;
   req.body.batchNumber = isBrototypeStudent === 'yes' ? batchNumber : '';
-  req.body.counsellorName = isBrototypeStudent === 'yes' ? counsellorName : '';
   req.body.message = message; // optional string, empty if not provided
 
   next();
