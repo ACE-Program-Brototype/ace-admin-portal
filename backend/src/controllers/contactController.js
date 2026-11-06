@@ -14,11 +14,34 @@ export const submitContactForm = async (req, res, next) => {
       phone,
       isBrototypeStudent,
       batchNumber,
-      counsellorName,
       message
     } = req.body;
 
     logger.info(`[Contact] Processing validated submission from: ${email}`);
+
+    // Duplicate check — reject if same email OR phone already exists in the database
+    const existingSubmission = await ContactSubmission.findOne({
+      $or: [
+        { email: email.trim().toLowerCase() },
+        { phone: phone.trim() }
+      ]
+    });
+
+    if (existingSubmission) {
+      const matchedOn =
+        existingSubmission.email === email.trim().toLowerCase() ? 'email address' : 'phone number';
+      logger.info(
+        `[Contact] Duplicate submission blocked — matched on ${matchedOn}: ${email} / ${phone} (existing ID: ${existingSubmission._id})`
+      );
+      return res.status(200).json({
+        success: true,
+        duplicate: true,
+        message:
+          "Thank you for reaching out to us! It appears we have already received an enquiry " +
+          "from you, and our team is actively reviewing your submission. We truly appreciate " +
+          "your enthusiasm and patience — we will be in touch with you very soon."
+      });
+    }
 
     // Insert into MongoDB database ('ace')
     const submission = await ContactSubmission.create({
@@ -27,7 +50,6 @@ export const submitContactForm = async (req, res, next) => {
       phone,
       isBrototypeStudent,
       batchNumber,
-      counsellorName,
       message
     });
 
