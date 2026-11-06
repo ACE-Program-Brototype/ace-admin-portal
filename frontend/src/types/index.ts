@@ -14,6 +14,7 @@ export interface ContactSubmission {
   phone: string;
   isBrototypeStudent: 'yes' | 'no';
   batchNumber?: string;
+  domain?: string;
   counsellorName?: string;
   message?: string;
   sheetSyncStatus: SheetSyncStatus;

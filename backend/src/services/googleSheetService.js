@@ -32,6 +32,9 @@ export const syncToGoogleSheets = async (submission) => {
       if (submission.batchNumber) {
         formData.append('batchNumber', submission.batchNumber);
       }
+      if (submission.domain) {
+        formData.append('domain', submission.domain);
+      }
     }
 
     if (submission.message) {

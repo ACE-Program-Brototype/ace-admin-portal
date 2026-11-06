@@ -14,6 +14,7 @@ export const submitContactForm = async (req, res, next) => {
       phone,
       isBrototypeStudent,
       batchNumber,
+      domain,
       message
     } = req.body;
 
@@ -50,6 +51,7 @@ export const submitContactForm = async (req, res, next) => {
       phone,
       isBrototypeStudent,
       batchNumber,
+      domain,
       message
     });
 
@@ -66,6 +68,7 @@ export const submitContactForm = async (req, res, next) => {
         name: submission.name,
         email: submission.email,
         isBrototypeStudent: submission.isBrototypeStudent,
+        domain: submission.domain || undefined,
         createdAt: submission.createdAt
       }
     });
@@ -106,14 +109,20 @@ export const getContactSubmissions = async (req, res, next) => {
       query.isBrototypeStudent = req.query.isBrototypeStudent.toLowerCase();
     }
 
-    // Keyword search across name, email, phone, batchNumber
+    // Filter by domain
+    if (req.query.domain) {
+      query.domain = req.query.domain.trim();
+    }
+
+    // Keyword search across name, email, phone, batchNumber, domain
     if (req.query.search) {
       const searchRegex = new RegExp(req.query.search.trim(), 'i');
       query.$or = [
         { name: searchRegex },
         { email: searchRegex },
         { phone: searchRegex },
-        { batchNumber: searchRegex }
+        { batchNumber: searchRegex },
+        { domain: searchRegex }
       ];
     }
 

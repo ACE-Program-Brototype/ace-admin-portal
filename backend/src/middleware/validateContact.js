@@ -1,5 +1,23 @@
 import { logger } from '../utils/logger.js';
 
+export const DOMAIN_OPTIONS = [
+  'MERN',
+  'MEAN',
+  'Python Django',
+  'Dot Net',
+  'Golang',
+  'Datascience',
+  'Machine Learning',
+  'Software Testing',
+  'Game Development',
+  'Java Spring Boot',
+  'Flutter',
+  'Android Kotlin',
+  'Devops',
+  'Cyber Security',
+  'Swift IOS',
+];
+
 /**
  * Validates and sanitizes contact form submissions:
  * - name: required, letters and standard name characters
@@ -7,6 +25,7 @@ import { logger } from '../utils/logger.js';
  * - phone: required, accepts numbers only (10 to 15 digits)
  * - isBrototypeStudent: required ('yes' or 'no')
  * - batchNumber: required only if isBrototypeStudent === 'yes'
+ * - domain: required only if isBrototypeStudent === 'yes' (must match DOMAIN_OPTIONS)
  * - message: optional
  */
 export const validateContactForm = (req, res, next) => {
@@ -61,16 +80,31 @@ export const validateContactForm = (req, res, next) => {
     errors.isBrototypeStudent = 'isBrototypeStudent must be either "yes" or "no"';
   }
 
-  // 5. Conditional validation for Brototype students
+  // 5. Conditional validation for Brototype students (batchNumber & domain)
   let batchNumber = '';
+  let domain = '';
 
   if (isBrototypeStudent === 'yes') {
     batchNumber = typeof body.batchNumber === 'string' ? body.batchNumber.trim() : '';
+    const rawDomain = typeof body.domain === 'string' ? body.domain.trim() : '';
 
     if (!batchNumber) {
       errors.batchNumber = 'Batch number is required for Brototype students';
     } else if (batchNumber.length < 2 || batchNumber.length > 30) {
       errors.batchNumber = 'Batch number must be between 2 and 30 characters';
+    }
+
+    if (!rawDomain) {
+      errors.domain = 'Domain is required for Brototype students';
+    } else {
+      const matchedDomain = DOMAIN_OPTIONS.find(
+        (opt) => opt.toLowerCase() === rawDomain.toLowerCase()
+      );
+      if (!matchedDomain) {
+        errors.domain = `Please select a valid domain (${DOMAIN_OPTIONS.join(', ')})`;
+      } else {
+        domain = matchedDomain;
+      }
     }
   }
 
@@ -98,6 +132,7 @@ export const validateContactForm = (req, res, next) => {
   req.body.phone = phone;
   req.body.isBrototypeStudent = isBrototypeStudent;
   req.body.batchNumber = isBrototypeStudent === 'yes' ? batchNumber : '';
+  req.body.domain = isBrototypeStudent === 'yes' ? domain : '';
   req.body.message = message; // optional string, empty if not provided
 
   next();
