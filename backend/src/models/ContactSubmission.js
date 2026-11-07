@@ -39,6 +39,11 @@ const contactSubmissionSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    domain: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     counsellorName: {
       type: String,
       trim: true,
