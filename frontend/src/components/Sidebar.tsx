@@ -168,3 +168,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileCl
     </>
   );
 };
+
