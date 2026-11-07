@@ -3,8 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminLayout } from './components/AdminLayout';
 import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
+import { DashboardOverviewPage } from './pages/DashboardOverviewPage';
+import { EnquiriesPage } from './pages/EnquiriesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,14 +26,17 @@ export const App: React.FC = () => {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
-              path="/"
               element={
                 <ProtectedRoute>
-                  <DashboardPage />
+                  <AdminLayout />
                 </ProtectedRoute>
               }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            >
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardOverviewPage />} />
+              <Route path="/enquiries" element={<EnquiriesPage />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
