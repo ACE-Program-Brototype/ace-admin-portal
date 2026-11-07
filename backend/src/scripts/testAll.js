@@ -29,9 +29,20 @@ async function runTotalApplicationTest() {
   await connectDB();
   await seedAdmin();
 
+  // Clean up any test records from prior runs
+  await ContactSubmission.deleteMany({
+    $or: [
+      { email: { $in: ['testalice@example.com', 'testbob@example.com'] } },
+      { phone: { $in: ['9988776655', '9988776644'] } }
+    ]
+  });
+
   const PORT = 5095;
   const server = app.listen(PORT);
   const baseUrl = `http://localhost:${PORT}`;
+
+  let nonStudentId;
+  let studentId;
 
   try {
     // -------------------------------------------------------------------------
@@ -102,15 +113,15 @@ async function runTotalApplicationTest() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Alice Wonder',
-        email: 'alice@example.com',
-        phone: '9876543210',
+        email: 'testalice@example.com',
+        phone: '9988776655',
         isBrototypeStudent: 'no',
         message: 'Excited about the program.'
       })
     });
     const validNonStudentData = await validNonStudentRes.json();
     assert(validNonStudentRes.status === 201 && validNonStudentData.success && validNonStudentData.data.id, 'POST /api/contact non-student valid submission returns 201');
-    const nonStudentId = validNonStudentData.data.id;
+    nonStudentId = validNonStudentData.data.id;
 
     // Valid Brototype student submission
     const validStudentRes = await fetch(`${baseUrl}/api/contact`, {
@@ -118,17 +129,17 @@ async function runTotalApplicationTest() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Bob Student',
-        email: 'bob@example.com',
-        phone: '9123456789',
+        email: 'testbob@example.com',
+        phone: '9988776644',
         isBrototypeStudent: 'yes',
         batchNumber: 'BCE-321',
-        counsellorName: 'Sarah Jenkins',
+        domain: 'MERN',
         message: 'Inquiry from existing student.'
       })
     });
     const validStudentData = await validStudentRes.json();
     assert(validStudentRes.status === 201 && validStudentData.success && validStudentData.data.id, 'POST /api/contact student valid submission returns 201');
-    const studentId = validStudentData.data.id;
+    studentId = validStudentData.data.id;
 
     // -------------------------------------------------------------------------
     console.log('\n--- 3. Admin Authentication & JWT ---');
@@ -215,7 +226,7 @@ async function runTotalApplicationTest() {
     const searchData = await searchRes.json();
     assert(
       searchRes.status === 200 &&
-      searchData.data.some(s => s.email === 'alice@example.com'),
+      searchData.data.some(s => s.email === 'testalice@example.com'),
       'GET /api/contact?search=Alice returns matching submission'
     );
 
@@ -257,6 +268,8 @@ async function runTotalApplicationTest() {
       throw new Error(`${failed} tests failed!`);
     }
   } finally {
+    if (nonStudentId) await ContactSubmission.deleteOne({ _id: nonStudentId });
+    if (studentId) await ContactSubmission.deleteOne({ _id: studentId });
     server.close();
   }
 }

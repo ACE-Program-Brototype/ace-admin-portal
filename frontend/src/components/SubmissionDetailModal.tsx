@@ -111,10 +111,18 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
                   <span className="text-zinc-500">Batch Number</span>
                   <span className="font-mono text-zinc-200">{submission.batchNumber || '—'}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500">Counsellor</span>
-                  <span className="text-zinc-200">{submission.counsellorName || '—'}</span>
-                </div>
+                {submission.domain && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500">Domain</span>
+                    <span className="text-zinc-200 font-medium">{submission.domain}</span>
+                  </div>
+                )}
+                {submission.counsellorName && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500">Counsellor</span>
+                    <span className="text-zinc-200">{submission.counsellorName}</span>
+                  </div>
+                )}
               </>
             )}
           </div>

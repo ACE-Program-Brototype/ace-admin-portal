@@ -135,6 +135,11 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                             Batch: {sub.batchNumber}
                           </div>
                         )}
+                        {sub.domain && (
+                          <div className="text-[11px] text-zinc-400 font-medium mt-0.5">
+                            Domain: {sub.domain}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <span className="text-zinc-400 text-xs">General</span>
