@@ -1,20 +1,24 @@
 import React from 'react';
 import { ContactSubmission } from '../types';
 import { getStatusConfig } from '../utils/statusUtils';
-import { Inbox, Calendar, Eye } from 'lucide-react';
+import { Inbox, Calendar, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface SubmissionsTableProps {
   submissions: ContactSubmission[];
   isLoading: boolean;
   onSelectSubmission: (submission: ContactSubmission) => void;
   onUpdateStatus?: (submission: ContactSubmission) => void;
+  sort?: string;
+  onSortChange?: (newSort: string) => void;
 }
 
 export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
   submissions,
   isLoading,
   onSelectSubmission,
-  onUpdateStatus
+  onUpdateStatus,
+  sort,
+  onSortChange
 }) => {
   const formatDate = (dateString: string) => {
     try {
@@ -31,6 +35,16 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
     }
   };
 
+  const handleNameSort = () => {
+    if (!onSortChange) return;
+    onSortChange(sort === 'name' ? '-name' : 'name');
+  };
+
+  const handleDateSort = () => {
+    if (!onSortChange) return;
+    onSortChange(sort === '-createdAt' ? 'createdAt' : '-createdAt');
+  };
+
   if (isLoading) {
     return (
       <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden p-6">
@@ -41,7 +55,7 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
               <div className="h-4 bg-zinc-800 rounded w-1/5"></div>
               <div className="h-4 bg-zinc-800 rounded w-1/6"></div>
               <div className="h-4 bg-zinc-800 rounded w-1/8"></div>
-              <div className="h-6 bg-zinc-800 rounded w-14"></div>
+              <div className="h-6 bg-zinc-800 rounded w-8"></div>
             </div>
           ))}
         </div>
@@ -69,10 +83,45 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
         <table className="w-full text-left text-xs">
           <thead className="bg-zinc-950/80 border-b border-zinc-800 text-zinc-400 font-medium uppercase tracking-wider text-[11px]">
             <tr>
-              <th className="py-3 px-4">Name</th>
+              {/* Name (Sortable) */}
+              <th
+                onClick={handleNameSort}
+                className="py-3 px-4 cursor-pointer select-none hover:text-zinc-200 transition group"
+                title="Sort by Name"
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Name</span>
+                  {sort === 'name' ? (
+                    <ArrowUp className="w-3.5 h-3.5 text-zinc-100" />
+                  ) : sort === '-name' ? (
+                    <ArrowDown className="w-3.5 h-3.5 text-zinc-100" />
+                  ) : (
+                    <ArrowUpDown className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition" />
+                  )}
+                </div>
+              </th>
+
               <th className="py-3 px-4">Phone no</th>
               <th className="py-3 px-4">Batch</th>
-              <th className="py-3 px-4">Submitted Date</th>
+
+              {/* Submitted Date & Time (Sortable) */}
+              <th
+                onClick={handleDateSort}
+                className="py-3 px-4 cursor-pointer select-none hover:text-zinc-200 transition group"
+                title="Sort by Date & Time"
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Submitted Date</span>
+                  {sort === '-createdAt' ? (
+                    <ArrowDown className="w-3.5 h-3.5 text-zinc-100" />
+                  ) : sort === 'createdAt' ? (
+                    <ArrowUp className="w-3.5 h-3.5 text-zinc-100" />
+                  ) : (
+                    <ArrowUpDown className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition" />
+                  )}
+                </div>
+              </th>
+
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4 text-right">View</th>
             </tr>

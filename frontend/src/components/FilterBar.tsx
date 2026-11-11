@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, RotateCw, X, Calendar } from 'lucide-react';
+import { Search, RotateCw, X, Calendar, ArrowUpDown } from 'lucide-react';
 
 interface FilterBarProps {
   search: string;
@@ -12,6 +12,8 @@ interface FilterBarProps {
   onStartDateChange: (value: string) => void;
   endDate: string;
   onEndDateChange: (value: string) => void;
+  sort: string;
+  onSortChange: (value: string) => void;
   onRefresh: () => void;
   isFetching: boolean;
   onReset: () => void;
@@ -29,6 +31,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   onStartDateChange,
   endDate,
   onEndDateChange,
+  sort,
+  onSortChange,
   onRefresh,
   isFetching,
   onReset,
@@ -59,7 +63,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           )}
         </div>
 
-        {/* Filters Group: Status, General/Brototype, Date Range (startDate & endDate) */}
+        {/* Filters Group: Status, General/Brototype, Date Range, Sort */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {/* Status Filter */}
           <select
@@ -121,6 +125,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 <X className="w-3 h-3" />
               </button>
             )}
+          </div>
+
+          {/* Sort By Dropdown */}
+          <div className="inline-flex items-center space-x-1.5 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs">
+            <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+            <select
+              value={sort}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="bg-transparent text-zinc-300 focus:outline-none cursor-pointer"
+              title="Sort by"
+              aria-label="Sort by"
+            >
+              <option value="-createdAt" className="bg-zinc-950 text-zinc-200">Date (Newest First)</option>
+              <option value="createdAt" className="bg-zinc-950 text-zinc-200">Date (Oldest First)</option>
+              <option value="name" className="bg-zinc-950 text-zinc-200">Name (A–Z)</option>
+              <option value="-name" className="bg-zinc-950 text-zinc-200">Name (Z–A)</option>
+            </select>
           </div>
 
           {/* Reset Filters Button */}

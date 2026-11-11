@@ -20,6 +20,7 @@ export const EnquiriesPage: React.FC = () => {
   const [studentFilter, setStudentFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [sort, setSort] = useState<string>('-createdAt');
 
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
   const [enquiryForStatusUpdate, setEnquiryForStatusUpdate] = useState<ContactSubmission | null>(null);
@@ -53,6 +54,11 @@ export const EnquiriesPage: React.FC = () => {
     setPage(1);
   };
 
+  const handleSortChange = (newSort: string) => {
+    setSort(newSort);
+    setPage(1);
+  };
+
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
     setPage(1);
@@ -65,6 +71,7 @@ export const EnquiriesPage: React.FC = () => {
     setStudentFilter('all');
     setStartDate('');
     setEndDate('');
+    setSort('-createdAt');
     setPage(1);
   };
 
@@ -73,7 +80,8 @@ export const EnquiriesPage: React.FC = () => {
     statusFilter !== 'all' ||
     studentFilter !== 'all' ||
     startDate !== '' ||
-    endDate !== '';
+    endDate !== '' ||
+    sort !== '-createdAt';
 
   // Server-side paginated & filtered query
   const {
@@ -93,6 +101,7 @@ export const EnquiriesPage: React.FC = () => {
         isBrototypeStudent: studentFilter,
         startDate,
         endDate,
+        sort,
         search: debouncedSearch
       }
     ],
@@ -104,6 +113,7 @@ export const EnquiriesPage: React.FC = () => {
         isBrototypeStudent: studentFilter,
         startDate,
         endDate,
+        sort,
         search: debouncedSearch
       }),
     staleTime: 1000 * 15,
@@ -120,7 +130,7 @@ export const EnquiriesPage: React.FC = () => {
       {/* Metrics Cards */}
       <StatsCards total={total} submissions={submissions} isLoading={isLoading} />
 
-      {/* Filters Bar: Status, General/Brototype, Date Range (startDate & endDate) */}
+      {/* Filters Bar: Status, General/Brototype, Date Range (startDate & endDate), Sort */}
       <FilterBar
         search={search}
         onSearchChange={setSearch}
@@ -132,6 +142,8 @@ export const EnquiriesPage: React.FC = () => {
         onStartDateChange={handleStartDateChange}
         endDate={endDate}
         onEndDateChange={handleEndDateChange}
+        sort={sort}
+        onSortChange={handleSortChange}
         onRefresh={refetch}
         isFetching={isFetching}
         onReset={handleResetFilters}
@@ -158,12 +170,14 @@ export const EnquiriesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Clean Enquiry Listing Table: Name, Phone no, Batch (if any), Submitted date, Status, View icon */}
+      {/* Clean Enquiry Listing Table: Name (Sortable), Phone no, Batch (if any), Submitted date (Sortable), Status, View icon */}
       <SubmissionsTable
         submissions={submissions}
         isLoading={isLoading}
         onSelectSubmission={setSelectedSubmission}
         onUpdateStatus={setEnquiryForStatusUpdate}
+        sort={sort}
+        onSortChange={handleSortChange}
       />
 
       {/* Page selection & backend pagination at the bottom */}
