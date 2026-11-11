@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Inbox, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Inbox, ShieldCheck, LogOut, X } from 'lucide-react';
 import { SignOutConfirmModal } from './SignOutConfirmModal';
 
 interface SidebarProps {
@@ -26,7 +26,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileCl
       path: '/enquiries',
       icon: Inbox,
       match: ['/enquiries']
-    }
+    },
+    ...(user?.isSuperAdmin || user?.role === 'superadmin' || user?.email === 'admin@ace.com'
+      ? [
+          {
+            name: 'Admins',
+            path: '/admins',
+            icon: ShieldCheck,
+            match: ['/admins']
+          }
+        ]
+      : [])
   ];
 
   const getInitials = (name?: string, email?: string) => {
@@ -121,7 +131,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileCl
             {getInitials(user?.name, user?.email)}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-medium text-zinc-200 truncate">{user?.name || 'Administrator'}</div>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs font-medium text-zinc-200 truncate">{user?.name || 'Administrator'}</span>
+              {user?.isSuperAdmin || user?.role === 'superadmin' || user?.email === 'admin@ace.com' ? (
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex-shrink-0">
+                  Super Admin
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700/60 flex-shrink-0 truncate max-w-[90px]" title={user?.role}>
+                  {user?.role || 'Admin'}
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-zinc-500 truncate font-mono">{user?.email}</div>
           </div>
         </div>

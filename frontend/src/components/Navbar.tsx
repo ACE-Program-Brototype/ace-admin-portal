@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Menu } from 'lucide-react';
+import { Menu, ShieldCheck } from 'lucide-react';
 
 interface NavbarProps {
   onMenuToggle?: () => void;
@@ -50,8 +50,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center space-x-2.5">
               <span className="text-sm font-semibold text-zinc-100">{title}</span>
               {subtitle && (
-                <span className="text-[11px] font-medium text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded border border-zinc-700/50">
-                  {subtitle}
+                <span
+                  className={`text-[11px] font-medium px-2 py-0.5 rounded border inline-flex items-center space-x-1 ${
+                    subtitle.includes('Super Admin')
+                      ? 'text-amber-300 bg-amber-500/10 border-amber-500/25'
+                      : 'text-zinc-400 bg-zinc-800/80 border-zinc-700/50'
+                  }`}
+                >
+                  {subtitle.includes('Super Admin') && (
+                    <ShieldCheck className="w-3 h-3 text-amber-400" />
+                  )}
+                  <span>{subtitle}</span>
                 </span>
               )}
             </div>

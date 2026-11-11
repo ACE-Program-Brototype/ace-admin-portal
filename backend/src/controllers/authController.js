@@ -8,12 +8,17 @@ import { logger } from '../utils/logger.js';
 const generateToken = (admin) => {
   const secret = process.env.JWT_SECRET || 'ace_admin_portal_default_secret_key';
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const isSuper =
+    admin.isSuperAdmin === true ||
+    admin.role === 'superadmin' ||
+    admin.email.toLowerCase() === (process.env.ADMIN_EMAIL || 'admin@ace.com').toLowerCase().trim();
 
   return jwt.sign(
     {
       id: admin._id,
       email: admin.email,
-      role: admin.role
+      role: admin.role,
+      isSuperAdmin: isSuper
     },
     secret,
     { expiresIn }
@@ -58,10 +63,24 @@ export const login = async (req, res, next) => {
       });
     }
 
+    // Check if administrator account is blocked
+    if (admin.isBlocked) {
+      logger.warn(`[Auth] Blocked admin attempted login: ${normalizedEmail}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Your administrator account has been blocked. Please contact the Super Administrator.'
+      });
+    }
+
     // Generate JWT
     const token = generateToken(admin);
 
     logger.success(`[Auth] Admin login successful for email: ${normalizedEmail}`);
+
+    const isSuper =
+      admin.isSuperAdmin === true ||
+      admin.role === 'superadmin' ||
+      admin.email.toLowerCase() === (process.env.ADMIN_EMAIL || 'admin@ace.com').toLowerCase().trim();
 
     res.status(200).json({
       success: true,
@@ -71,7 +90,10 @@ export const login = async (req, res, next) => {
         id: admin._id,
         email: admin.email,
         name: admin.name,
-        role: admin.role
+        role: admin.role,
+        phone: admin.phone || '',
+        isSuperAdmin: isSuper,
+        isBlocked: !!admin.isBlocked
       }
     });
   } catch (error) {
@@ -92,13 +114,21 @@ export const getMe = async (req, res, next) => {
       });
     }
 
+    const isSuper =
+      admin.isSuperAdmin === true ||
+      admin.role === 'superadmin' ||
+      admin.email.toLowerCase() === (process.env.ADMIN_EMAIL || 'admin@ace.com').toLowerCase().trim();
+
     res.status(200).json({
       success: true,
       data: {
         id: admin._id,
         email: admin.email,
         name: admin.name,
-        role: admin.role
+        role: admin.role,
+        phone: admin.phone || '',
+        isSuperAdmin: isSuper,
+        isBlocked: !!admin.isBlocked
       }
     });
   } catch (error) {

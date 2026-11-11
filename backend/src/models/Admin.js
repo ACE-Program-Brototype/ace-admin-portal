@@ -25,16 +25,35 @@ const adminSchema = new mongoose.Schema(
       trim: true,
       default: 'Admin'
     },
+    phone: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     role: {
       type: String,
-      enum: ['admin'],
-      default: 'admin'
+      trim: true,
+      default: 'Admin'
+    },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false
     }
   },
   {
     timestamps: true
   }
 );
+
+// Indexes
+adminSchema.index({ isSuperAdmin: 1 });
+adminSchema.index({ isBlocked: 1 });
+adminSchema.index({ role: 1 });
+adminSchema.index({ createdAt: -1 });
 
 // Pre-save hook to hash password if modified
 adminSchema.pre('save', async function (next) {

@@ -255,7 +255,176 @@ async function runTotalApplicationTest() {
     assert(notFoundRes.status === 404, 'GET /api/contact/:nonExistentId returns 404 Not Found');
 
     // -------------------------------------------------------------------------
-    console.log('\n--- 5. 404 Route Handler ---');
+    console.log('\n--- 5. Admin Management (Super Admin & RBAC) ---');
+    // -------------------------------------------------------------------------
+    // Clean up any test admin left over
+    await Admin.deleteOne({ email: 'test.created.admin@ace.com' });
+
+    // Super admin lists admins (must exclude super admin)
+    const getAdminsRes = await fetch(`${baseUrl}/api/admins`, {
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    const getAdminsData = await getAdminsRes.json();
+    assert(getAdminsRes.status === 200 && Array.isArray(getAdminsData.data), 'GET /api/admins as superadmin returns 200 and admin list');
+    assert(!getAdminsData.data.some(a => a.email === 'admin@ace.com'), 'GET /api/admins excludes super admin from listing');
+
+    // Super admin creates new admin with phone, name, email, password, and internal organization role
+    const createAdminRes = await fetch(`${baseUrl}/api/admins`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        name: 'Created Admin User',
+        email: 'test.created.admin@ace.com',
+        password: 'Admin@12345',
+        phone: '9847111222',
+        role: 'Community Lead'
+      })
+    });
+    const createAdminData = await createAdminRes.json();
+    assert(
+      createAdminRes.status === 201 &&
+      createAdminData.data?.email === 'test.created.admin@ace.com' &&
+      createAdminData.data?.role === 'Community Lead',
+      'POST /api/admins creates new admin with phone and internal organizational role'
+    );
+
+    // Duplicate email fails with 409
+    const dupAdminRes = await fetch(`${baseUrl}/api/admins`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        name: 'Duplicate Admin User',
+        email: 'test.created.admin@ace.com',
+        password: 'Admin@12345',
+        phone: '9847111222',
+        role: 'Community Lead'
+      })
+    });
+    assert(dupAdminRes.status === 409, 'POST /api/admins with duplicate email returns 409 Conflict');
+
+    // Log in as the newly created regular admin to test RBAC
+    const regLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test.created.admin@ace.com', password: 'Admin@12345' })
+    });
+    const regLoginData = await regLoginRes.json();
+    const regularToken = regLoginData.token;
+
+    // Regular admin attempting to access /api/admins should receive 403 Forbidden
+    const forbiddenRes = await fetch(`${baseUrl}/api/admins`, {
+      headers: { Authorization: `Bearer ${regularToken}` }
+    });
+    assert(forbiddenRes.status === 403, 'GET /api/admins with regular admin token returns 403 Forbidden');
+
+    // Superadmin attempting to block self should be rejected (400 Bad Request)
+    const selfAdmin = await Admin.findOne({ email: 'admin@ace.com' });
+    const blockSelfRes = await fetch(`${baseUrl}/api/admins/${selfAdmin._id}/toggle-block`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ isBlocked: true })
+    });
+    assert(blockSelfRes.status === 400, 'PATCH /api/admins/:id/toggle-block attempting to block own account returns 400');
+
+    // Superadmin gets admin by ID (View Admin Details)
+    const getSingleRes = await fetch(`${baseUrl}/api/admins/${createAdminData.data.id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    const getSingleData = await getSingleRes.json();
+    assert(
+      getSingleRes.status === 200 && getSingleData.data?.email === 'test.created.admin@ace.com',
+      'GET /api/admins/:id returns admin details for viewing'
+    );
+
+    // Superadmin updates admin details and password
+    const updateAdminRes = await fetch(`${baseUrl}/api/admins/${createAdminData.data.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        name: 'Updated Admin User',
+        phone: '9847999888',
+        role: 'Senior Operations Lead',
+        password: 'NewAdmin@12345'
+      })
+    });
+    const updateAdminData = await updateAdminRes.json();
+    assert(
+      updateAdminRes.status === 200 &&
+      updateAdminData.data?.name === 'Updated Admin User' &&
+      updateAdminData.data?.role === 'Senior Operations Lead',
+      'PUT /api/admins/:id updates admin details and password successfully'
+    );
+
+    // Superadmin blocks the test admin
+    const blockAdminRes = await fetch(`${baseUrl}/api/admins/${createAdminData.data.id}/toggle-block`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ isBlocked: true })
+    });
+    const blockAdminData = await blockAdminRes.json();
+    assert(
+      blockAdminRes.status === 200 && blockAdminData.data?.isBlocked === true,
+      'PATCH /api/admins/:id/toggle-block blocks admin account'
+    );
+
+    // Attempting login with blocked admin returns 403 Forbidden
+    const blockedLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test.created.admin@ace.com', password: 'NewAdmin@12345' })
+    });
+    assert(blockedLoginRes.status === 403, 'POST /api/auth/login for blocked admin returns 403 Forbidden');
+
+    // Superadmin unblocks the test admin
+    const unblockAdminRes = await fetch(`${baseUrl}/api/admins/${createAdminData.data.id}/toggle-block`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ isBlocked: false })
+    });
+    const unblockAdminData = await unblockAdminRes.json();
+    assert(
+      unblockAdminRes.status === 200 && unblockAdminData.data?.isBlocked === false,
+      'PATCH /api/admins/:id/toggle-block unblocks admin account'
+    );
+
+    // Superadmin attempting to delete self should be rejected (400 Bad Request)
+    const deleteSelfRes = await fetch(`${baseUrl}/api/admins/${selfAdmin._id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    assert(deleteSelfRes.status === 400, 'DELETE /api/admins/:id attempting to delete own account returns 400');
+
+    // Superadmin deletes the test admin permanently
+    const deleteAdminRes = await fetch(`${baseUrl}/api/admins/${createAdminData.data.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    const deleteAdminData = await deleteAdminRes.json();
+    assert(deleteAdminRes.status === 200, 'DELETE /api/admins/:id deletes admin permanently');
+
+    const checkDeleted = await Admin.findById(createAdminData.data.id);
+    assert(!checkDeleted, 'Deleted admin is confirmed removed from database');
+
+    // -------------------------------------------------------------------------
+    console.log('\n--- 6. 404 Route Handler ---');
     // -------------------------------------------------------------------------
     const missingRouteRes = await fetch(`${baseUrl}/api/completely-unknown-route`);
     assert(missingRouteRes.status === 404, 'GET /api/completely-unknown-route returns 404');

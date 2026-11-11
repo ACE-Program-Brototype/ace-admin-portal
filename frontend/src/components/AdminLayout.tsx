@@ -11,6 +11,9 @@ export const AdminLayout: React.FC = () => {
     if (location.pathname.startsWith('/enquiries')) {
       return { title: 'Enquiries', subtitle: 'Submissions' };
     }
+    if (location.pathname.startsWith('/admins')) {
+      return { title: 'Admin Management', subtitle: 'Super Admin Access' };
+    }
     return { title: 'Dashboard', subtitle: 'Overview' };
   };
 
