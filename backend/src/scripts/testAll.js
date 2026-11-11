@@ -230,7 +230,7 @@ async function runTotalApplicationTest() {
       'GET /api/contact?search=Alice returns matching submission'
     );
 
-    // Filter by isBrototypeStudent
+    // Filter by isBrototypeStudent=yes (Brototype)
     const filterRes = await fetch(`${baseUrl}/api/contact?isBrototypeStudent=yes`, {
       headers: { Authorization: `Bearer ${adminToken}` }
     });
@@ -239,6 +239,29 @@ async function runTotalApplicationTest() {
       filterRes.status === 200 &&
       filterData.data.every(s => s.isBrototypeStudent === 'yes'),
       'GET /api/contact?isBrototypeStudent=yes filters exclusively'
+    );
+
+    // Filter by isBrototypeStudent=no (General)
+    const filterGeneralRes = await fetch(`${baseUrl}/api/contact?isBrototypeStudent=no`, {
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    const filterGeneralData = await filterGeneralRes.json();
+    assert(
+      filterGeneralRes.status === 200 &&
+      filterGeneralData.data.every(s => s.isBrototypeStudent === 'no'),
+      'GET /api/contact?isBrototypeStudent=no filters exclusively'
+    );
+
+    // Date range filter (startDate and endDate)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dateRangeRes = await fetch(`${baseUrl}/api/contact?startDate=${todayStr}&endDate=${todayStr}`, {
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    const dateRangeData = await dateRangeRes.json();
+    assert(
+      dateRangeRes.status === 200 &&
+      dateRangeData.total >= 2,
+      'GET /api/contact?startDate=...&endDate=... filters submissions created today'
     );
 
     // Invalid ObjectId format
@@ -255,7 +278,154 @@ async function runTotalApplicationTest() {
     assert(notFoundRes.status === 404, 'GET /api/contact/:nonExistentId returns 404 Not Found');
 
     // -------------------------------------------------------------------------
-    console.log('\n--- 5. 404 Route Handler ---');
+    console.log('\n--- 5. Enquiry Lifecycle Status Flow & History ---');
+    // -------------------------------------------------------------------------
+    // Verify initial status is ENQUIRED
+    const initialEnquiry = await ContactSubmission.findById(nonStudentId);
+    assert(initialEnquiry.status === 'ENQUIRED', 'Initial submission status is ENQUIRED');
+    assert(
+      Array.isArray(initialEnquiry.statusHistory) && initialEnquiry.statusHistory.length >= 1,
+      'Initial submission contains statusHistory entry'
+    );
+
+    // Invalid transition: ENQUIRED cannot jump directly to SELECTED (400)
+    const invalidJumpRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ status: 'SELECTED', feedback: 'premature selection' })
+    });
+    assert(invalidJumpRes.status === 400, 'PATCH /api/contact/:id/status rejects invalid jump ENQUIRED -> SELECTED (400)');
+
+    // Valid transition: ENQUIRED -> CONNECTED
+    const connectedRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ status: 'CONNECTED', notes: 'Spoke with candidate on phone' })
+    });
+    const connectedData = await connectedRes.json();
+    assert(
+      connectedRes.status === 200 && connectedData.data.status === 'CONNECTED',
+      'PATCH /api/contact/:id/status transitions ENQUIRED -> CONNECTED'
+    );
+
+    // Valid transition: CONNECTED -> PREPARATION
+    const prepRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ status: 'PREPARATION', notes: 'Candidate studying material' })
+    });
+    assert(prepRes.status === 200, 'PATCH /api/contact/:id/status transitions CONNECTED -> PREPARATION');
+
+    // Validation: Transitioning to SCHEDULED requires scheduledAt date & time
+    const schedMissingDateRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ status: 'SCHEDULED' })
+    });
+    assert(
+      schedMissingDateRes.status === 400,
+      'PATCH /api/contact/:id/status to SCHEDULED without scheduledAt returns 400'
+    );
+
+    // Valid transition: PREPARATION -> SCHEDULED with scheduledAt and optional meetLink
+    const testMeetingTime = new Date(Date.now() + 86400000).toISOString();
+    const scheduledRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        status: 'SCHEDULED',
+        scheduledAt: testMeetingTime,
+        meetLink: 'https://meet.google.com/abc-defg-hij',
+        notes: 'Interview scheduled for tomorrow'
+      })
+    });
+    const scheduledData = await scheduledRes.json();
+    assert(
+      scheduledRes.status === 200 &&
+      scheduledData.data.status === 'SCHEDULED' &&
+      scheduledData.data.meetLink === 'https://meet.google.com/abc-defg-hij',
+      'PATCH /api/contact/:id/status transitions to SCHEDULED with date and meet link'
+    );
+
+    // Validation: Transitioning to SELECTED requires feedback
+    const selectedMissingFeedbackRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ status: 'SELECTED' })
+    });
+    assert(
+      selectedMissingFeedbackRes.status === 400,
+      'PATCH /api/contact/:id/status to SELECTED without feedback returns 400'
+    );
+
+    // Valid transition: SCHEDULED -> SELECTED with feedback
+    const selectedRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        status: 'SELECTED',
+        feedback: 'Excellent problem solving skills and strong motivation.',
+        notes: 'Offered seat in upcoming batch'
+      })
+    });
+    const selectedData = await selectedRes.json();
+    assert(
+      selectedRes.status === 200 &&
+      selectedData.data.status === 'SELECTED' &&
+      selectedData.data.feedback.includes('problem solving'),
+      'PATCH /api/contact/:id/status transitions SCHEDULED -> SELECTED with feedback'
+    );
+
+    // Valid transition: SELECTED -> ONBOARDED
+    const onboardedRes = await fetch(`${baseUrl}/api/contact/${nonStudentId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        status: 'ONBOARDED',
+        notes: 'Payment received and orientation completed'
+      })
+    });
+    const onboardedData = await onboardedRes.json();
+    assert(
+      onboardedRes.status === 200 && onboardedData.data.status === 'ONBOARDED',
+      'PATCH /api/contact/:id/status transitions SELECTED -> ONBOARDED'
+    );
+
+    // Verify complete audit history
+    const finalDoc = await ContactSubmission.findById(nonStudentId);
+    assert(
+      finalDoc.statusHistory.length >= 6 &&
+      finalDoc.statusHistory.some(h => h.status === 'SCHEDULED' && h.meetLink.includes('meet.google.com')) &&
+      finalDoc.statusHistory.some(h => h.status === 'SELECTED' && h.feedback.includes('problem solving')),
+      'statusHistory logs every transition with author, timestamp, meetLink, and feedback'
+    );
+
+    // -------------------------------------------------------------------------
+    console.log('\n--- 6. 404 Route Handler ---');
     // -------------------------------------------------------------------------
     const missingRouteRes = await fetch(`${baseUrl}/api/completely-unknown-route`);
     assert(missingRouteRes.status === 404, 'GET /api/completely-unknown-route returns 404');
