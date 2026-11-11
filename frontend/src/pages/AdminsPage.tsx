@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAdmins } from '../api/admins';
 import { AdminUser } from '../types';
@@ -97,7 +98,9 @@ export const AdminsPage: React.FC = () => {
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
             <span>
-              {(error as any)?.response?.data?.message || 'Failed to load administrators. Please try again.'}
+              {axios.isAxiosError<{ message?: string }>(error)
+                ? error.response?.data?.message || error.message
+                : 'Failed to load administrators. Please try again.'}
             </span>
           </div>
           <button

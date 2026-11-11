@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import { Admin } from '../models/Admin.js';
 import { logger } from '../utils/logger.js';
 
@@ -119,11 +120,16 @@ export const createAdmin = async (req, res, next) => {
     // 3. Clean phone number
     const cleanedPhone = phone ? phone.trim() : '';
 
-    // 4. Create Admin with standard access control and unblocked status
+    // 4. Hash password with bcrypt
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10) || 10;
+    const salt = await bcrypt.genSalt(saltRounds);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // 5. Create Admin with hashed password, standard access control and unblocked status
     const newAdmin = await Admin.create({
       name: name.trim(),
       email: normalizedEmail,
-      password,
+      password: hashedPassword,
       phone: cleanedPhone,
       role: assignedRole,
       isSuperAdmin: false,
@@ -256,7 +262,9 @@ export const updateAdmin = async (req, res, next) => {
           message: 'Password must be at least 6 characters long'
         });
       }
-      admin.password = password; // Trigger pre-save bcrypt hash
+      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10) || 10;
+      const salt = await bcrypt.genSalt(saltRounds);
+      admin.password = await bcrypt.hash(password.trim(), salt);
     }
 
     if (isBlocked !== undefined && typeof isBlocked === 'boolean') {

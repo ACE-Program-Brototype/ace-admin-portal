@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toggleBlockAdmin } from '../../api/admins';
 import { AdminUser } from '../../types';
@@ -84,7 +85,9 @@ export const BlockAdminModal: React.FC<BlockAdminModalProps> = ({
 
           {mutation.isError && (
             <div className="mt-3 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-300 text-xs">
-              {(mutation.error as any)?.response?.data?.message || 'Failed to update administrator status.'}
+              {axios.isAxiosError<{ message?: string }>(mutation.error)
+                ? mutation.error.response?.data?.message || mutation.error.message
+                : 'Failed to update administrator status.'}
             </div>
           )}
 

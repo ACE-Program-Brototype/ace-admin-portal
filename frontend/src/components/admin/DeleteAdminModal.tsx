@@ -78,8 +78,13 @@ export const DeleteAdminModal: React.FC<DeleteAdminModalProps> = ({
             <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
               Are you sure you want to permanently delete{' '}
               <span className="font-semibold text-zinc-200">{admin.name}</span>{' '}
-              <span className="text-zinc-400"></span>?
+              <span className="text-zinc-400">({admin.email})</span>? This action cannot be undone.
             </p>
+          </div>
+
+          <div className="mt-3 flex items-center space-x-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+            <span>Permanent deletion cannot be reversed.</span>
           </div>
 
           {errorMessage && (

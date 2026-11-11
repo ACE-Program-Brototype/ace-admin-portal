@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSubmissions } from '../api/submissions';
 import { ContactSubmission } from '../types';
@@ -122,7 +123,11 @@ export const EnquiriesPage: React.FC = () => {
         <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-            <span>{(error as any)?.response?.data?.message || (error as Error).message}</span>
+            <span>
+              {axios.isAxiosError<{ message?: string }>(error)
+                ? error.response?.data?.message || error.message
+                : (error as Error).message}
+            </span>
           </div>
           <button
             onClick={() => refetch()}
