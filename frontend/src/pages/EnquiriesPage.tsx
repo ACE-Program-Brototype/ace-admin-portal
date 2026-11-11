@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSubmissions } from '../api/submissions';
 import { ContactSubmission } from '../types';
@@ -7,6 +8,7 @@ import { FilterBar } from '../components/FilterBar';
 import { SubmissionsTable } from '../components/SubmissionsTable';
 import { Pagination } from '../components/Pagination';
 import { SubmissionDetailModal } from '../components/SubmissionDetailModal';
+import { UpdateEnquiryStatusModal } from '../components/UpdateEnquiryStatusModal';
 import { AlertCircle } from 'lucide-react';
 
 export const EnquiriesPage: React.FC = () => {
@@ -14,9 +16,13 @@ export const EnquiriesPage: React.FC = () => {
   const [limit, setLimit] = useState<number>(20);
   const [search, setSearch] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-  const [studentFilter, setStudentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [studentFilter, setStudentFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
+  const [enquiryForStatusUpdate, setEnquiryForStatusUpdate] = useState<ContactSubmission | null>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -27,13 +33,23 @@ export const EnquiriesPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
+  const handleStatusFilterChange = (val: string) => {
+    setStatusFilter(val);
+    setPage(1);
+  };
+
   const handleStudentFilterChange = (val: string) => {
     setStudentFilter(val);
     setPage(1);
   };
 
-  const handleStatusFilterChange = (val: string) => {
-    setStatusFilter(val);
+  const handleStartDateChange = (val: string) => {
+    setStartDate(val);
+    setPage(1);
+  };
+
+  const handleEndDateChange = (val: string) => {
+    setEndDate(val);
     setPage(1);
   };
 
@@ -45,14 +61,21 @@ export const EnquiriesPage: React.FC = () => {
   const handleResetFilters = () => {
     setSearch('');
     setDebouncedSearch('');
-    setStudentFilter('all');
     setStatusFilter('all');
+    setStudentFilter('all');
+    setStartDate('');
+    setEndDate('');
     setPage(1);
   };
 
   const hasActiveFilters =
-    debouncedSearch.trim() !== '' || studentFilter !== 'all' || statusFilter !== 'all';
+    debouncedSearch.trim() !== '' ||
+    statusFilter !== 'all' ||
+    studentFilter !== 'all' ||
+    startDate !== '' ||
+    endDate !== '';
 
+  // Server-side paginated & filtered query
   const {
     data,
     isLoading,
@@ -68,6 +91,8 @@ export const EnquiriesPage: React.FC = () => {
         limit,
         status: statusFilter,
         isBrototypeStudent: studentFilter,
+        startDate,
+        endDate,
         search: debouncedSearch
       }
     ],
@@ -77,6 +102,8 @@ export const EnquiriesPage: React.FC = () => {
         limit,
         status: statusFilter,
         isBrototypeStudent: studentFilter,
+        startDate,
+        endDate,
         search: debouncedSearch
       }),
     staleTime: 1000 * 15,
@@ -90,27 +117,21 @@ export const EnquiriesPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Title Header */}
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-zinc-100 tracking-tight">Enquiries</h1>
-        <p className="text-xs text-zinc-400 mt-0.5">
-          Manage contact form submissions and Google Sheets replication.
-        </p>
-      </div>
-
       {/* Metrics Cards */}
       <StatsCards total={total} submissions={submissions} isLoading={isLoading} />
 
-      {/* Filters */}
+      {/* Filters Bar: Status, General/Brototype, Date Range (startDate & endDate) */}
       <FilterBar
         search={search}
         onSearchChange={setSearch}
-        studentFilter={studentFilter}
-        onStudentFilterChange={handleStudentFilterChange}
         statusFilter={statusFilter}
         onStatusFilterChange={handleStatusFilterChange}
-        limit={limit}
-        onLimitChange={handleLimitChange}
+        studentFilter={studentFilter}
+        onStudentFilterChange={handleStudentFilterChange}
+        startDate={startDate}
+        onStartDateChange={handleStartDateChange}
+        endDate={endDate}
+        onEndDateChange={handleEndDateChange}
         onRefresh={refetch}
         isFetching={isFetching}
         onReset={handleResetFilters}
@@ -122,7 +143,11 @@ export const EnquiriesPage: React.FC = () => {
         <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-            <span>{(error as any)?.response?.data?.message || (error as Error).message}</span>
+            <span>
+              {axios.isAxiosError<{ message?: string }>(error)
+                ? error.response?.data?.message || error.message
+                : (error as Error).message}
+            </span>
           </div>
           <button
             onClick={() => refetch()}
@@ -133,14 +158,15 @@ export const EnquiriesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Table */}
+      {/* Clean Enquiry Listing Table: Name, Phone no, Batch (if any), Submitted date, Status, View icon */}
       <SubmissionsTable
         submissions={submissions}
         isLoading={isLoading}
         onSelectSubmission={setSelectedSubmission}
+        onUpdateStatus={setEnquiryForStatusUpdate}
       />
 
-      {/* Pagination */}
+      {/* Page selection & backend pagination at the bottom */}
       <Pagination
         page={page}
         pages={pages}
@@ -148,14 +174,28 @@ export const EnquiriesPage: React.FC = () => {
         count={count}
         limit={limit}
         onPageChange={setPage}
+        onLimitChange={handleLimitChange}
       />
 
-      {/* Modal */}
+      {/* Detail Modal */}
       <SubmissionDetailModal
         submission={selectedSubmission}
         onClose={() => setSelectedSubmission(null)}
+        onUpdateStatus={(sub) => setEnquiryForStatusUpdate(sub)}
+      />
+
+      {/* Lifecycle Status Update Modal */}
+      <UpdateEnquiryStatusModal
+        submission={enquiryForStatusUpdate}
+        isOpen={!!enquiryForStatusUpdate}
+        onClose={() => setEnquiryForStatusUpdate(null)}
+        onSuccess={(updated) => {
+          if (selectedSubmission?._id === updated._id) {
+            setSelectedSubmission(updated);
+          }
+          refetch();
+        }}
       />
     </div>
   );
 };
-

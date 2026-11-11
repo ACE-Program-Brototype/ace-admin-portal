@@ -1,18 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ContactSubmission } from '../types';
-import { X, Copy, Check } from 'lucide-react';
+import { getStatusConfig } from '../utils/statusUtils';
+import {
+  X,
+  Calendar,
+  Video,
+  ExternalLink,
+  Edit3
+} from 'lucide-react';
 
 interface SubmissionDetailModalProps {
   submission: ContactSubmission | null;
   onClose: () => void;
+  onUpdateStatus?: (submission: ContactSubmission) => void;
 }
 
 export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
   submission,
-  onClose
+  onClose,
+  onUpdateStatus
 }) => {
-  const [copied, setCopied] = useState<string | null>(null);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -23,13 +30,11 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
 
   if (!submission) return null;
 
-  const copy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
-  };
+  const currentStatus = submission.status || 'ENQUIRED';
+  const statusCfg = getStatusConfig(currentStatus);
+  const isStudent = submission.isBrototypeStudent === 'yes';
 
-  const formatDate = (dateString?: string | null) => {
+  const formatDateTime = (dateString?: string | null) => {
     if (!dateString) return '—';
     try {
       return new Intl.DateTimeFormat('en-IN', {
@@ -37,143 +42,232 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
         month: 'short',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+        minute: '2-digit'
       }).format(new Date(dateString));
     } catch {
       return dateString;
     }
   };
 
+  // Build full history including initial enquiry event if not present
+  const getFullHistory = () => {
+    const list = [...(submission.statusHistory || [])];
+    if (list.length === 0) {
+      list.push({
+        status: submission.status || 'ENQUIRED',
+        previousStatus: null,
+        changedByName: 'Candidate (Form Submission)',
+        changedAt: submission.createdAt,
+        notes: submission.message || 'Initial contact enquiry submitted'
+      });
+    }
+    // Reverse chronological order (latest status on top)
+    return list.reverse();
+  };
+
+  const historyList = getFullHistory();
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
       <div
-        className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-          <div>
+        {/* Minimal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+          <div className="flex items-center space-x-3">
             <h2 className="text-base font-semibold text-zinc-100">{submission.name}</h2>
-            <div className="flex items-center space-x-1.5 text-xs text-zinc-500 font-mono mt-0.5">
-              <span>{submission._id}</span>
-              <button
-                onClick={() => copy(submission._id, 'id')}
-                className="text-zinc-500 hover:text-zinc-300"
-                title="Copy ID"
-              >
-                {copied === 'id' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
+            <span className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusCfg.badgeClass}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dotClass}`} />
+              <span>{statusCfg.label}</span>
+            </span>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center space-x-2">
+            {onUpdateStatus && (
+              <button
+                type="button"
+                onClick={() => onUpdateStatus(submission)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs rounded-lg transition shadow-sm cursor-pointer"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Change Status</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="p-5 space-y-4 text-xs max-h-[70vh] overflow-y-auto">
-          {/* Contact Information */}
-          <div className="grid grid-cols-2 gap-3 p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-lg">
+        {/* Minimal Body */}
+        <div className="p-6 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+          {/* Key Details Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl">
             <div>
-              <span className="text-zinc-500 block mb-0.5">Email</span>
-              <div className="flex items-center space-x-1 font-medium text-zinc-200">
-                <span className="truncate">{submission.email}</span>
-                <button
-                  onClick={() => copy(submission.email, 'email')}
-                  className="text-zinc-500 hover:text-zinc-300"
-                  title="Copy email"
-                >
-                  {copied === 'email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <span className="text-zinc-500 block mb-0.5">Phone</span>
+              <span className="text-zinc-500 block text-[11px] mb-0.5">Phone Number</span>
               <span className="font-mono text-zinc-200">{submission.phone}</span>
             </div>
-          </div>
-
-          {/* Student Status & Affiliation */}
-          <div className="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-lg space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-500">Affiliation</span>
-              <span className="font-medium text-zinc-200">
-                {submission.isBrototypeStudent === 'yes' ? 'Brototype Student' : 'General Inquiry'}
+            <div>
+              <span className="text-zinc-500 block text-[11px] mb-0.5">Email</span>
+              <span className="text-zinc-200 truncate block" title={submission.email}>
+                {submission.email}
               </span>
             </div>
-            {submission.isBrototypeStudent === 'yes' && (
-              <>
-                <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
-                  <span className="text-zinc-500">Batch Number</span>
-                  <span className="font-mono text-zinc-200">{submission.batchNumber || '—'}</span>
-                </div>
-                {submission.domain && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-500">Domain</span>
-                    <span className="text-zinc-200 font-medium">{submission.domain}</span>
-                  </div>
-                )}
-                {submission.counsellorName && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-500">Counsellor</span>
-                    <span className="text-zinc-200">{submission.counsellorName}</span>
-                  </div>
-                )}
-              </>
+            <div>
+              <span className="text-zinc-500 block text-[11px] mb-0.5">Applicant Type</span>
+              <span className="text-zinc-200 font-medium">
+                {isStudent ? 'Brototype Student' : 'General'}
+              </span>
+            </div>
+            {isStudent && submission.batchNumber && (
+              <div>
+                <span className="text-zinc-500 block text-[11px] mb-0.5">Batch</span>
+                <span className="font-mono text-zinc-200">{submission.batchNumber}</span>
+              </div>
             )}
-          </div>
-
-          {/* Message */}
-          <div className="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-lg">
-            <span className="text-zinc-500 block mb-1">Message</span>
-            <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap">
-              {submission.message || <span className="text-zinc-600 italic">No message provided.</span>}
-            </p>
-          </div>
-
-          {/* System & Sync */}
-          <div className="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-lg space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-500">Google Sheet Status</span>
-              <span
-                className={`font-medium ${
-                  submission.sheetSyncStatus === 'synced'
-                    ? 'text-emerald-400'
-                    : submission.sheetSyncStatus === 'failed'
-                    ? 'text-rose-400'
-                    : 'text-amber-400'
-                }`}
-              >
-                {submission.sheetSyncStatus.toUpperCase()}
-              </span>
+            {submission.domain && (
+              <div>
+                <span className="text-zinc-500 block text-[11px] mb-0.5">Domain</span>
+                <span className="text-zinc-200">{submission.domain}</span>
+              </div>
+            )}
+            <div>
+              <span className="text-zinc-500 block text-[11px] mb-0.5">Submitted Date</span>
+              <span className="font-mono text-zinc-300">{formatDateTime(submission.createdAt)}</span>
             </div>
-            {submission.sheetSyncedAt && (
+          </div>
+
+          {/* Active Schedule Session (if scheduled) */}
+          {submission.scheduledAt && (
+            <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-200 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500">Synced At</span>
-                <span className="text-zinc-400 font-mono">{formatDate(submission.sheetSyncedAt)}</span>
+                <span className="font-semibold text-purple-300 flex items-center space-x-1.5">
+                  <Calendar className="w-4 h-4 text-purple-400" />
+                  <span>Scheduled Session</span>
+                </span>
+                <span className="font-mono text-xs text-purple-300 font-medium">
+                  {formatDateTime(submission.scheduledAt)}
+                </span>
               </div>
-            )}
-            {submission.sheetSyncError && (
-              <div className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded font-mono text-[11px]">
-                {submission.sheetSyncError}
-              </div>
-            )}
-            <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
-              <span className="text-zinc-500">Submitted At</span>
-              <span className="text-zinc-400 font-mono">{formatDate(submission.createdAt)}</span>
+              {submission.meetLink && (
+                <div className="flex items-center space-x-2 pt-1 border-t border-purple-500/20 text-xs">
+                  <Video className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                  <span className="text-zinc-400">Meeting:</span>
+                  <a
+                    href={submission.meetLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-300 hover:text-purple-100 underline truncate inline-flex items-center space-x-1"
+                  >
+                    <span className="truncate max-w-sm">{submission.meetLink}</span>
+                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Decision Feedback (if provided) */}
+          {submission.feedback && (
+            <div className={`p-3.5 rounded-xl border space-y-1 ${
+              currentStatus === 'SELECTED' || currentStatus === 'ONBOARDED'
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'
+                : currentStatus === 'REJECTED'
+                ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
+                : 'bg-zinc-950/60 border-zinc-800 text-zinc-300'
+            }`}>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 block">
+                Evaluation Feedback
+              </span>
+              <p className="leading-relaxed whitespace-pre-wrap text-xs text-zinc-200">
+                {submission.feedback}
+              </p>
+            </div>
+          )}
+
+          {/* Candidate Message (if provided) */}
+          {submission.message && (
+            <div className="p-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-1">
+              <span className="text-zinc-500 block text-[11px]">Message</span>
+              <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                {submission.message}
+              </p>
+            </div>
+          )}
+
+          {/* Enquiry History — Visual Timeline */}
+          <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-4">
+            <h3 className="text-xs font-semibold text-zinc-200">Enquiry History</h3>
+
+            <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
+              {historyList.map((item, index) => {
+                const cfg = getStatusConfig(item.status);
+                const message = item.feedback || item.notes;
+
+                return (
+                  <div key={item._id || index} className="relative">
+                    {/* Timeline node circle on vertical line */}
+                    <span className={`absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full ring-4 ring-zinc-900 ${cfg.dotClass}`} />
+
+                    <div className="space-y-1">
+                      {/* Status & Time */}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.badgeClass}`}>
+                          <span>{cfg.label}</span>
+                        </span>
+                        <span className="text-[11px] text-zinc-500 font-mono">
+                          {formatDateTime(item.changedAt)}
+                        </span>
+                      </div>
+
+                      {/* Updated by */}
+                      <div className="text-[11px] text-zinc-400">
+                        Updated by <span className="text-zinc-200 font-medium">{item.changedByName || 'Admin'}</span>
+                      </div>
+
+                      {/* Scheduled info if applicable */}
+                      {item.scheduledAt && (
+                        <div className="text-[11px] text-purple-300 flex items-center space-x-1.5 pt-0.5">
+                          <Calendar className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                          <span>Scheduled: {formatDateTime(item.scheduledAt)}</span>
+                          {item.meetLink && (
+                            <a
+                              href={item.meetLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-purple-400 hover:underline ml-1 inline-flex items-center space-x-0.5"
+                            >
+                              <span>Meet Link</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Message / Feedback */}
+                      {message && (
+                        <p className="mt-1 p-2.5 rounded-lg bg-zinc-900 border border-zinc-800/80 text-[11px] text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                          {message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-5 py-3 bg-zinc-950/80 border-t border-zinc-800 flex justify-end">
+        {/* Minimal Footer */}
+        <div className="px-6 py-3 bg-zinc-950/80 border-t border-zinc-800 flex justify-end">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition cursor-pointer"
+            className="px-4 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition cursor-pointer"
           >
             Close
           </button>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginAdmin } from '../api/auth';
@@ -37,9 +38,13 @@ export const LoginPage: React.FC = () => {
       login(response.token, response.data);
       const origin = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
       navigate(origin, { replace: true });
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message || 'Invalid email or password. Please try again.';
+    } catch (err: unknown) {
+      let message = 'Invalid email or password. Please try again.';
+      if (axios.isAxiosError<{ message?: string }>(err)) {
+        message = err.response?.data?.message || err.message || message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       setError(message);
     } finally {
       setIsLoading(false);

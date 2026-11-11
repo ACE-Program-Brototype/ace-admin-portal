@@ -1,17 +1,20 @@
 import React from 'react';
 import { ContactSubmission } from '../types';
-import { Inbox } from 'lucide-react';
+import { getStatusConfig } from '../utils/statusUtils';
+import { Inbox, Calendar, Eye } from 'lucide-react';
 
 interface SubmissionsTableProps {
   submissions: ContactSubmission[];
   isLoading: boolean;
   onSelectSubmission: (submission: ContactSubmission) => void;
+  onUpdateStatus?: (submission: ContactSubmission) => void;
 }
 
 export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
   submissions,
   isLoading,
-  onSelectSubmission
+  onSelectSubmission,
+  onUpdateStatus
 }) => {
   const formatDate = (dateString: string) => {
     try {
@@ -25,33 +28,6 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
       }).format(date);
     } catch {
       return dateString;
-    }
-  };
-
-  const renderStatus = (status: string) => {
-    switch (status) {
-      case 'synced':
-        return (
-          <span className="inline-flex items-center text-xs font-medium text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
-            Synced
-          </span>
-        );
-      case 'failed':
-        return (
-          <span className="inline-flex items-center text-xs font-medium text-rose-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
-            Failed
-          </span>
-        );
-      case 'pending':
-      default:
-        return (
-          <span className="inline-flex items-center text-xs font-medium text-amber-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span>
-            Pending
-          </span>
-        );
     }
   };
 
@@ -88,78 +64,93 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
   }
 
   return (
-    <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden">
+    <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-zinc-950/80 border-b border-zinc-800 text-zinc-400 font-medium uppercase tracking-wider text-[11px]">
             <tr>
-              <th className="py-3 px-4">Candidate</th>
-              <th className="py-3 px-4">Contact</th>
-              <th className="py-3 px-4">Affiliation</th>
-              <th className="py-3 px-4">Google Sheet</th>
-              <th className="py-3 px-4">Date</th>
-              <th className="py-3 px-4 text-right">Action</th>
+              <th className="py-3 px-4">Name</th>
+              <th className="py-3 px-4">Phone no</th>
+              <th className="py-3 px-4">Batch</th>
+              <th className="py-3 px-4">Submitted Date</th>
+              <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4 text-right">View</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800/60">
             {submissions.map((sub) => {
-              const isStudent = sub.isBrototypeStudent === 'yes';
+              const cfg = getStatusConfig(sub.status);
 
               return (
                 <tr
                   key={sub._id}
                   className="hover:bg-zinc-800/40 transition-colors duration-100"
                 >
-                  <td className="py-3 px-4">
-                    <div className="font-medium text-zinc-100">{sub.name}</div>
-                    {sub.message && (
-                      <div className="text-[11px] text-zinc-500 truncate max-w-[220px]" title={sub.message}>
-                        {sub.message}
-                      </div>
-                    )}
+                  {/* Name */}
+                  <td className="py-3.5 px-4 font-semibold text-zinc-100 whitespace-nowrap">
+                    {sub.name}
                   </td>
 
-                  <td className="py-3 px-4 text-zinc-300">
-                    <div>{sub.email}</div>
-                    <div className="text-zinc-500 text-[11px] font-mono mt-0.5">{sub.phone}</div>
+                  {/* Phone no */}
+                  <td className="py-3.5 px-4 text-zinc-300 font-mono text-xs whitespace-nowrap">
+                    {sub.phone}
                   </td>
 
-                  <td className="py-3 px-4">
-                    {isStudent ? (
-                      <div>
-                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-800 text-zinc-200 border border-zinc-700/60">
-                          Brototype Student
-                        </span>
-                        {sub.batchNumber && (
-                          <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
-                            Batch: {sub.batchNumber}
-                          </div>
-                        )}
-                        {sub.domain && (
-                          <div className="text-[11px] text-zinc-400 font-medium mt-0.5">
-                            Domain: {sub.domain}
-                          </div>
-                        )}
-                      </div>
+                  {/* Batch (if any) */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    {sub.batchNumber ? (
+                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-zinc-800 text-zinc-200 border border-zinc-700/60">
+                        {sub.batchNumber}
+                      </span>
                     ) : (
-                      <span className="text-zinc-400 text-xs">General</span>
+                      <span className="text-zinc-600 font-mono text-xs">—</span>
                     )}
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {renderStatus(sub.sheetSyncStatus)}
-                  </td>
-
-                  <td className="py-3 px-4 text-zinc-400 whitespace-nowrap">
+                  {/* Submitted Date */}
+                  <td className="py-3.5 px-4 text-zinc-400 whitespace-nowrap font-mono text-[11px]">
                     {formatDate(sub.createdAt)}
                   </td>
 
-                  <td className="py-3 px-4 text-right">
+                  {/* Status Badge (Click to Change Status) */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <div>
+                      {onUpdateStatus ? (
+                        <button
+                          type="button"
+                          onClick={() => onUpdateStatus(sub)}
+                          className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border transition hover:opacity-80 cursor-pointer ${cfg.badgeClass}`}
+                          title="Click to change status"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotClass}`} />
+                          <span>{cfg.label}</span>
+                        </button>
+                      ) : (
+                        <span className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.badgeClass}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotClass}`} />
+                          <span>{cfg.label}</span>
+                        </span>
+                      )}
+
+                      {sub.status === 'SCHEDULED' && sub.scheduledAt && (
+                        <div className="text-[10px] text-purple-300 font-mono flex items-center space-x-1 mt-1">
+                          <Calendar className="w-3 h-3 text-purple-400 flex-shrink-0" />
+                          <span>{formatDate(sub.scheduledAt)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* View Details Only */}
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <button
+                      type="button"
                       onClick={() => onSelectSubmission(sub)}
-                      className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition cursor-pointer"
+                      className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition cursor-pointer inline-flex items-center justify-center border border-zinc-700/40"
+                      title="View Details"
+                      aria-label="View Details"
                     >
-                      View
+                      <Eye className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
