@@ -67,6 +67,38 @@ export const getAdmins = async (req, res, next) => {
   }
 };
 
+// Password validation criteria:
+// - At least 8 characters
+// - At least one number
+// - At least one lowercase letter
+// - At least one uppercase letter
+// - At least one special character
+// - No empty spaces
+export const validateAdminPassword = (password) => {
+  if (!password || typeof password !== 'string') {
+    return { isValid: false, message: 'Password is required' };
+  }
+  if (password.length < 8) {
+    return { isValid: false, message: 'Password must be at least 8 characters long' };
+  }
+  if (/\s/.test(password)) {
+    return { isValid: false, message: 'Password must not contain any spaces' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one lowercase letter' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one uppercase letter' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one number' };
+  }
+  if (!/[^a-zA-Z0-9\s]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one special character' };
+  }
+  return { isValid: true };
+};
+
 // @desc    Create a new organizational administrator (Standard Access Control)
 // @route   POST /api/admins
 // @access  Private (Super Admin only)
@@ -98,10 +130,11 @@ export const createAdmin = async (req, res, next) => {
       });
     }
 
-    if (!password || typeof password !== 'string' || password.length < 6) {
+    const passwordValidation = validateAdminPassword(password);
+    if (!passwordValidation.isValid) {
       return res.status(400).json({
         success: false,
-        message: 'Password is required and must be at least 6 characters'
+        message: passwordValidation.message
       });
     }
 
@@ -256,15 +289,16 @@ export const updateAdmin = async (req, res, next) => {
     }
 
     if (password && typeof password === 'string' && password.trim()) {
-      if (password.length < 6) {
+      const passwordValidation = validateAdminPassword(password);
+      if (!passwordValidation.isValid) {
         return res.status(400).json({
           success: false,
-          message: 'Password must be at least 6 characters long'
+          message: passwordValidation.message
         });
       }
       const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10) || 10;
       const salt = await bcrypt.genSalt(saltRounds);
-      admin.password = await bcrypt.hash(password.trim(), salt);
+      admin.password = await bcrypt.hash(password, salt);
     }
 
     if (isBlocked !== undefined && typeof isBlocked === 'boolean') {

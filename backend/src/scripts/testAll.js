@@ -268,6 +268,33 @@ async function runTotalApplicationTest() {
     assert(getAdminsRes.status === 200 && Array.isArray(getAdminsData.data), 'GET /api/admins as superadmin returns 200 and admin list');
     assert(!getAdminsData.data.some(a => a.email === 'admin@ace.com'), 'GET /api/admins excludes super admin from listing');
 
+    // Password validation checks when creating an admin
+    const invalidPasswords = [
+      { pwd: 'Adm@1', reason: 'at least 8 characters' },
+      { pwd: 'AdminWithNoNumber@', reason: 'at least one number' },
+      { pwd: 'ADMIN@12345', reason: 'at least one lowercase letter' },
+      { pwd: 'admin@12345', reason: 'at least one uppercase letter' },
+      { pwd: 'Admin12345', reason: 'at least one special character' },
+      { pwd: 'Admin @12345', reason: 'no empty spaces' }
+    ];
+
+    for (const testCase of invalidPasswords) {
+      const invalidRes = await fetch(`${baseUrl}/api/admins`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({
+          name: 'Invalid Pwd User',
+          email: 'invalid.pwd@ace.com',
+          password: testCase.pwd,
+          role: 'Admin'
+        })
+      });
+      assert(invalidRes.status === 400, `POST /api/admins rejects password failing ${testCase.reason}`);
+    }
+
     // Super admin creates new admin with phone, name, email, password, and internal organization role
     const createAdminRes = await fetch(`${baseUrl}/api/admins`, {
       method: 'POST',

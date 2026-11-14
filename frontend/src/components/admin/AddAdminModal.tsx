@@ -15,8 +15,10 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Check
 } from 'lucide-react';
+import { validatePassword, getPasswordCriteria } from '../../utils/passwordValidation';
 
 interface AddAdminModalProps {
   isOpen: boolean;
@@ -83,6 +85,8 @@ export const AddAdminModal: React.FC<AddAdminModalProps> = ({
     }
   });
 
+  const passwordCriteria = getPasswordCriteria(password);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -91,7 +95,6 @@ export const AddAdminModal: React.FC<AddAdminModalProps> = ({
 
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    const trimmedPassword = password;
     const trimmedPhone = phone.trim();
     const trimmedRole = role.trim();
 
@@ -106,12 +109,13 @@ export const AddAdminModal: React.FC<AddAdminModalProps> = ({
       return;
     }
 
-    if (!trimmedPassword || trimmedPassword.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
+    const pwdValidation = validatePassword(password);
+    if (!pwdValidation.isValid) {
+      setErrorMessage(pwdValidation.message || 'Password does not meet the required criteria.');
       return;
     }
 
-    if (trimmedPassword !== confirmPassword) {
+    if (password !== confirmPassword) {
       setErrorMessage('Passwords do not match. Please verify the confirmation password.');
       return;
     }
@@ -129,7 +133,7 @@ export const AddAdminModal: React.FC<AddAdminModalProps> = ({
     mutation.mutate({
       name: trimmedName,
       email: trimmedEmail,
-      password: trimmedPassword,
+      password: password,
       phone: trimmedPhone.replace(/\D/g, ''),
       role: trimmedRole
     });
@@ -213,8 +217,7 @@ export const AddAdminModal: React.FC<AddAdminModalProps> = ({
               <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type={showPassword ? 'text' : 'password'}
-                minLength={6}
-                placeholder="Min. 6 characters"
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-9 pr-9 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 transition"
@@ -228,6 +231,28 @@ export const AddAdminModal: React.FC<AddAdminModalProps> = ({
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+
+            {/* Password Requirements Checklist */}
+            {password.length > 0 && (
+              <div className="mt-2 p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-lg space-y-1.5">
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-zinc-400">
+                  Password Requirements
+                </div>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                  {passwordCriteria.map((c) => (
+                    <div
+                      key={c.id}
+                      className={`flex items-center space-x-1.5 text-[11px] transition-colors ${
+                        c.met ? 'text-emerald-400 font-medium' : 'text-zinc-500'
+                      }`}
+                    >
+                      <Check className={`w-3 h-3 flex-shrink-0 ${c.met ? 'text-emerald-400' : 'text-zinc-600'}`} />
+                      <span className="truncate">{c.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Confirmation Password */}
@@ -239,7 +264,6 @@ export const AddAdminModal: React.FC<AddAdminModalProps> = ({
               <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
-                minLength={6}
                 placeholder="Re-enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
