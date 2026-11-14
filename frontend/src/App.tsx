@@ -7,6 +7,7 @@ import { AdminLayout } from './components/AdminLayout';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardOverviewPage } from './pages/DashboardOverviewPage';
 import { EnquiriesPage } from './pages/EnquiriesPage';
+import { AdminsPage } from './pages/AdminsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,14 @@ export const App: React.FC = () => {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardOverviewPage />} />
               <Route path="/enquiries" element={<EnquiriesPage />} />
+              <Route
+                path="/admins"
+                element={
+                  <ProtectedRoute requiredRole="superadmin">
+                    <AdminsPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

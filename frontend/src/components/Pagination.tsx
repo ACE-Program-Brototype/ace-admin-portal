@@ -8,6 +8,7 @@ interface PaginationProps {
   count: number;
   limit: number;
   onPageChange: (newPage: number) => void;
+  onLimitChange?: (newLimit: number) => void;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -15,7 +16,8 @@ export const Pagination: React.FC<PaginationProps> = ({
   pages,
   total,
   limit,
-  onPageChange
+  onPageChange,
+  onLimitChange
 }) => {
   if (total === 0) return null;
 
@@ -47,10 +49,27 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1 py-2 text-xs text-zinc-400">
-      <div>
-        Showing <span className="font-medium text-zinc-200">{start}</span>–
-        <span className="font-medium text-zinc-200">{end}</span> of{' '}
-        <span className="font-medium text-zinc-200">{total}</span>
+      <div className="flex items-center space-x-4">
+        <div>
+          Showing <span className="font-medium text-zinc-200">{start}</span>–
+          <span className="font-medium text-zinc-200">{end}</span> of{' '}
+          <span className="font-medium text-zinc-200">{total}</span>
+        </div>
+
+        {onLimitChange && (
+          <div className="flex items-center space-x-2 pl-3 border-l border-zinc-800">
+            <span className="text-[11px] text-zinc-500">Rows per page:</span>
+            <select
+              value={limit}
+              onChange={(e) => onLimitChange(Number(e.target.value))}
+              className="bg-zinc-950 border border-zinc-800 text-zinc-300 rounded-md px-2 py-0.5 text-xs focus:outline-none focus:border-zinc-600 cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center space-x-1">

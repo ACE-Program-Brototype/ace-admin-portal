@@ -78,6 +78,14 @@ const contactSubmissionSchema = new mongoose.Schema(
   }
 );
 
+// Query indexes
+contactSubmissionSchema.index({ email: 1 });
+contactSubmissionSchema.index({ phone: 1 });
+contactSubmissionSchema.index({ createdAt: -1 });
+contactSubmissionSchema.index({ isBrototypeStudent: 1 });
+contactSubmissionSchema.index({ sheetSyncStatus: 1 });
+contactSubmissionSchema.index({ domain: 1 });
+
 export const ContactSubmission = mongoose.model(
   'ContactSubmission',
   contactSubmissionSchema

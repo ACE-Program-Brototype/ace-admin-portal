@@ -25,10 +25,23 @@ const adminSchema = new mongoose.Schema(
       trim: true,
       default: 'Admin'
     },
+    phone: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     role: {
       type: String,
-      enum: ['admin'],
-      default: 'admin'
+      trim: true,
+      default: 'Admin'
+    },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false
     }
   },
   {
@@ -36,12 +49,23 @@ const adminSchema = new mongoose.Schema(
   }
 );
 
-// Pre-save hook to hash password if modified
+// Indexes
+adminSchema.index({ isSuperAdmin: 1 });
+adminSchema.index({ isBlocked: 1 });
+adminSchema.index({ role: 1 });
+adminSchema.index({ createdAt: -1 });
+
+// Pre-save hook to hash password if modified and not already hashed
 adminSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
-  const salt = await bcrypt.genSalt(10);
+  // Prevent double-hashing if password was already hashed with bcrypt
+  if (this.password && /^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/.test(this.password)) {
+    return next();
+  }
+  const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10) || 10;
+  const salt = await bcrypt.genSalt(saltRounds);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
