@@ -5,8 +5,8 @@ import { Search, X, SlidersHorizontal, RotateCw } from 'lucide-react';
 interface AdminFilterBarProps {
   search: string;
   onSearchChange: (value: string) => void;
-  statusFilter: string;
-  onStatusFilterChange: (value: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (value: string) => void;
   sort: string;
   onSortChange: (value: string) => void;
   onRefresh?: () => void;
@@ -33,8 +33,8 @@ const SORT_OPTIONS = [
 export const AdminFilterBar: React.FC<AdminFilterBarProps> = ({
   search,
   onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
+  statusFilter = 'all',
+  onStatusFilterChange = () => {},
   sort,
   onSortChange,
   onRefresh,
