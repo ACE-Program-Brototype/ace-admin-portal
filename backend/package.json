@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "seed": "node src/scripts/seedDatabase.js",
+    "seed:clean": "node src/scripts/seedDatabase.js --clean",
     "seed:admin": "node src/scripts/seedAdmin.js",
     "import:sheet": "node src/scripts/importFromGoogleSheet.js",
     "test": "node src/scripts/testAll.js"

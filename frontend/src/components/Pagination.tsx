@@ -57,12 +57,12 @@ export const Pagination: React.FC<PaginationProps> = ({
         </div>
 
         {onLimitChange && (
-          <div className="flex items-center space-x-1.5 text-xs text-zinc-400">
-            <span>Rows:</span>
+          <div className="flex items-center space-x-2 pl-3 border-l border-zinc-800">
+            <span className="text-[11px] text-zinc-500">Rows per page:</span>
             <select
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="bg-zinc-950 border border-zinc-800 text-zinc-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-zinc-600 cursor-pointer"
+              className="bg-zinc-950 border border-zinc-800 text-zinc-300 rounded-md px-2 py-0.5 text-xs focus:outline-none focus:border-zinc-600 cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>

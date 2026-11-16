@@ -34,6 +34,13 @@ export const protectAdmin = async (req, res, next) => {
       });
     }
 
+    if (admin.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your administrator account has been blocked.'
+      });
+    }
+
     req.user = admin;
     next();
   } catch (error) {
@@ -43,4 +50,31 @@ export const protectAdmin = async (req, res, next) => {
       message: 'Invalid or expired authentication token.'
     });
   }
+};
+
+/**
+ * Middleware to restrict access exclusively to Super Admins.
+ */
+export const requireSuperAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required.'
+    });
+  }
+
+  const isSuper =
+    req.user.isSuperAdmin === true ||
+    req.user.role === 'superadmin' ||
+    req.user.email.toLowerCase() === (process.env.ADMIN_EMAIL || 'admin@ace.com').toLowerCase().trim();
+
+  if (!isSuper) {
+    logger.warn(`[Access Denied] Admin ${req.user.email} attempted superadmin operation.`);
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied: Super Administrator privileges are required for this action.'
+    });
+  }
+
+  next();
 };

@@ -1,8 +1,48 @@
 export interface AdminUser {
   id: string;
+  _id?: string;
   email: string;
   name: string;
-  role: 'admin';
+  phone?: string;
+  role: string; // Internal organizational role (e.g. "Operations Lead", "Community Manager")
+  isSuperAdmin?: boolean;
+  isBlocked?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminsResponse {
+  success: boolean;
+  count: number;
+  total: number;
+  page: number;
+  pages: number;
+  data: AdminUser[];
+}
+
+export interface AdminsQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  sort?: string;
+}
+
+export interface CreateAdminPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  role: string;
+}
+
+export interface UpdateAdminPayload {
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  password?: string;
+  isBlocked?: boolean;
 }
 
 export type SheetSyncStatus = 'pending' | 'synced' | 'failed';

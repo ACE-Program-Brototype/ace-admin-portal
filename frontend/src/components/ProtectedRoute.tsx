@@ -3,8 +3,16 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRole?: 'superadmin' | 'admin';
+}
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredRole
+}) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -18,6 +26,17 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Role-based protection check
+  if (requiredRole === 'superadmin') {
+    const isSuper =
+      user?.isSuperAdmin === true ||
+      user?.role === 'superadmin' ||
+      user?.email === 'admin@ace.com';
+    if (!isSuper) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;
