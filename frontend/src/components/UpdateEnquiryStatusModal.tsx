@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateEnquiryStatus } from '../api/submissions';
 import { ContactSubmission, EnquiryLifecycleStatus, UpdateEnquiryStatusPayload } from '../types';
-import { VALID_STATUS_TRANSITIONS, getStatusConfig } from '../utils/statusUtils';
+import { ALL_ENQUIRY_STATUSES, getStatusConfig } from '../utils/statusUtils';
 import {
   X,
   Calendar,
@@ -30,7 +30,6 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
   const queryClient = useQueryClient();
 
   const currentStatus = (submission?.status || 'ENQUIRED') as EnquiryLifecycleStatus;
-  const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
 
   const [selectedTargetStatus, setSelectedTargetStatus] = useState<EnquiryLifecycleStatus | ''>('');
   const [scheduledAt, setScheduledAt] = useState<string>('');
@@ -42,8 +41,7 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
   // Reset form whenever modal opens or submission changes
   useEffect(() => {
     if (submission && isOpen) {
-      const allowed = VALID_STATUS_TRANSITIONS[currentStatus] || [];
-      setSelectedTargetStatus(allowed.length > 0 ? allowed[0] : '');
+      setSelectedTargetStatus(currentStatus);
 
       if (submission.scheduledAt) {
         const d = new Date(submission.scheduledAt);
@@ -106,6 +104,11 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
       return;
     }
 
+    if (selectedTargetStatus === currentStatus) {
+      setErrorMessage(`Enquiry is already in "${getStatusConfig(currentStatus).label}" status. Please select a different status.`);
+      return;
+    }
+
     if (selectedTargetStatus === 'SCHEDULED' && !scheduledAt) {
       setErrorMessage('Please select a date and time for the session.');
       return;
@@ -117,7 +120,8 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
     }
 
     const payload: UpdateEnquiryStatusPayload = {
-      status: selectedTargetStatus
+      status: selectedTargetStatus,
+      adminOverride: true
     };
 
     if (selectedTargetStatus === 'SCHEDULED') {
@@ -166,48 +170,40 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Status Selection Dropdown */}
-          {allowedTransitions.length > 0 ? (
-            <div>
-              <label htmlFor="target-status-select" className="block text-xs font-medium text-zinc-300 mb-1.5">
-                New Status <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <select
-                  id="target-status-select"
-                  value={selectedTargetStatus}
-                  onChange={(e) => {
-                    setSelectedTargetStatus(e.target.value as EnquiryLifecycleStatus);
-                    setErrorMessage(null);
-                  }}
-                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 focus:outline-none focus:border-zinc-600 transition cursor-pointer appearance-none pr-9"
-                >
-                  <option value="" disabled className="bg-zinc-900 text-zinc-500">
-                    -- Select new status --
-                  </option>
-                  {allowedTransitions.map((target) => {
-                    const cfg = getStatusConfig(target);
-                    return (
-                      <option key={target} value={target} className="bg-zinc-900 text-zinc-100 py-1">
-                        {cfg.label}
-                      </option>
-                    );
-                  })}
-                </select>
-                <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-              {selectedTargetStatus && (
-                <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${getStatusConfig(selectedTargetStatus).dotClass}`} />
-                  <span>{getStatusConfig(selectedTargetStatus).description}</span>
-                </p>
-              )}
+          {/* Status Selection Dropdown - Show all enquiry statuses */}
+          <div>
+            <label htmlFor="target-status-select" className="block text-xs font-medium text-zinc-300 mb-1.5">
+              Select Status <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <select
+                id="target-status-select"
+                value={selectedTargetStatus}
+                onChange={(e) => {
+                  setSelectedTargetStatus(e.target.value as EnquiryLifecycleStatus);
+                  setErrorMessage(null);
+                }}
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 focus:outline-none focus:border-zinc-600 transition cursor-pointer appearance-none pr-9"
+              >
+                {ALL_ENQUIRY_STATUSES.map((target) => {
+                  const cfg = getStatusConfig(target);
+                  const isCurrent = target === currentStatus;
+                  return (
+                    <option key={target} value={target} className="bg-zinc-900 text-zinc-100 py-1">
+                      {cfg.label} {isCurrent ? '(Current)' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+              <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-          ) : (
-            <div className="p-3 rounded-lg bg-zinc-950/70 border border-zinc-800 text-xs text-zinc-400">
-              This enquiry is in its final status. No further transitions available.
-            </div>
-          )}
+            {selectedTargetStatus && (
+              <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${getStatusConfig(selectedTargetStatus).dotClass}`} />
+                <span>{getStatusConfig(selectedTargetStatus).description}</span>
+              </p>
+            )}
+          </div>
 
           {/* Conditional: SCHEDULED (Date, Time, Meet Link) */}
           {selectedTargetStatus === 'SCHEDULED' && (
@@ -302,7 +298,7 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
             </button>
             <button
               type="submit"
-              disabled={mutation.isPending || allowedTransitions.length === 0}
+              disabled={mutation.isPending || !selectedTargetStatus || selectedTargetStatus === currentStatus}
               className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 hover:bg-white text-zinc-950 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
             >
               {mutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

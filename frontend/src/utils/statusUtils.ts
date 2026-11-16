@@ -1,5 +1,15 @@
 import { EnquiryLifecycleStatus } from '../types';
 
+export const ALL_ENQUIRY_STATUSES: EnquiryLifecycleStatus[] = [
+  'ENQUIRED',
+  'CONNECTED',
+  'PREPARATION',
+  'SCHEDULED',
+  'SELECTED',
+  'REJECTED',
+  'ONBOARDED'
+];
+
 export const VALID_STATUS_TRANSITIONS: Record<EnquiryLifecycleStatus, EnquiryLifecycleStatus[]> = {
   ENQUIRED: ['CONNECTED'],
   CONNECTED: ['PREPARATION', 'SCHEDULED', 'REJECTED'],

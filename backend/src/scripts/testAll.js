@@ -607,7 +607,8 @@ async function runTotalApplicationTest() {
     }
   } finally {
     if (nonStudentId) await ContactSubmission.deleteOne({ _id: nonStudentId });
-    if (studentId) await ContactSubmission.deleteOne({ _id: studentId });\n    await Admin.deleteOne({ email: 'test.created.admin@ace.com' });
+    if (studentId) await ContactSubmission.deleteOne({ _id: studentId });
+    await Admin.deleteOne({ email: 'test.created.admin@ace.com' });
     server.close();
   }
 }

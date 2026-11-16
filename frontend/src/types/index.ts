@@ -100,6 +100,7 @@ export interface UpdateEnquiryStatusPayload {
   meetLink?: string;
   feedback?: string;
   notes?: string;
+  adminOverride?: boolean;
 }
 
 export interface SubmissionsResponse {

@@ -298,9 +298,10 @@ export const updateEnquiryStatus = async (req, res, next) => {
       });
     }
 
-    // Validate transition
+    // Validate transition (Admins can override via UI, while strict workflow applies otherwise)
     const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
-    if (!allowedTransitions.includes(newStatus)) {
+    const isOverride = req.body.adminOverride === true || req.query.override === 'true';
+    if (!isOverride && !allowedTransitions.includes(newStatus)) {
       return res.status(400).json({
         success: false,
         message: `Invalid status transition from "${currentStatus}" to "${newStatus}". Allowed transitions from "${currentStatus}" are: ${
