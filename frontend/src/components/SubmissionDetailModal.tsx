@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ContactSubmission } from '../types';
 import { getStatusConfig } from '../utils/statusUtils';
 import {
@@ -67,8 +68,8 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
 
   const historyList = getFullHistory();
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div
         className="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
@@ -273,6 +274,7 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
