@@ -157,20 +157,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileCl
           <span>Sign out</span>
         </button>
       </div>
-
-      {/* Sign Out Confirmation Modal */}
-      <SignOutConfirmModal
-        isOpen={showSignOutModal}
-        onClose={() => setShowSignOutModal(false)}
-        onConfirm={handleConfirmSignOut}
-      />
     </aside>
   );
 
   return (
     <>
       {/* Desktop Sidebar (Permanent) */}
-      <div className="hidden lg:block h-screen sticky top-0 flex-shrink-0">
+      <div className="hidden lg:block h-screen sticky top-0 flex-shrink-0 z-20">
         {sidebarContent}
       </div>
 
@@ -186,6 +179,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileCl
           </div>
         </div>
       )}
+
+      {/* Sign Out Confirmation Modal */}
+      <SignOutConfirmModal
+        isOpen={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+        onConfirm={handleConfirmSignOut}
+      />
     </>
   );
 };

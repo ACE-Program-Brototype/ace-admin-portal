@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LogOut, X } from 'lucide-react';
 
 interface SignOutConfirmModalProps {
@@ -24,9 +25,9 @@ export const SignOutConfirmModal: React.FC<SignOutConfirmModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -70,7 +71,8 @@ export const SignOutConfirmModal: React.FC<SignOutConfirmModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
