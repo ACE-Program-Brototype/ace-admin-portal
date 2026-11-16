@@ -19,6 +19,13 @@ export const getAdmins = async (req, res, next) => {
       email: { $ne: rootAdminEmail }
     };
 
+    // Account status filter: 'active' or 'blocked'
+    if (req.query.status === 'active') {
+      query.isBlocked = { $ne: true };
+    } else if (req.query.status === 'blocked') {
+      query.isBlocked = true;
+    }
+
     // Keyword search across name, email, phone, and role
     if (req.query.search && req.query.search.trim()) {
       const searchRegex = new RegExp(req.query.search.trim(), 'i');

@@ -49,7 +49,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1 py-2 text-xs text-zinc-400">
-      <div className="flex items-center space-x-4">
+      <div className="flex flex-wrap items-center gap-3">
         <div>
           Showing <span className="font-medium text-zinc-200">{start}</span>–
           <span className="font-medium text-zinc-200">{end}</span> of{' '}
@@ -67,6 +67,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               <option value={10}>10</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
           </div>
         )}

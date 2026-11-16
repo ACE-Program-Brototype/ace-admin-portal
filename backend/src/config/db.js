@@ -5,7 +5,8 @@ export const connectDB = async () => {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/ace';
     const conn = await mongoose.connect(mongoUri, {
-      dbName: 'ace'
+      dbName: 'ace',
+      serverSelectionTimeoutMS: 5000
     });
     logger.success(`[MongoDB] Connected to host: ${conn.connection.host}, database: "${conn.connection.name}"`);
     return conn;

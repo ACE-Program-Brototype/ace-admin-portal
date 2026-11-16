@@ -12,6 +12,7 @@ export const fetchAdmins = async (params: AdminsQueryParams): Promise<AdminsResp
 
   if (params.page) cleanParams.page = params.page;
   if (params.limit) cleanParams.limit = params.limit;
+  if (params.status && params.status !== 'all') cleanParams.status = params.status;
   if (params.role && params.role !== 'all') cleanParams.role = params.role;
   if (params.search && params.search.trim()) cleanParams.search = params.search.trim();
   if (params.sort) cleanParams.sort = params.sort;
