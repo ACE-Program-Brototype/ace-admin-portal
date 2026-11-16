@@ -20,6 +20,7 @@ export const AdminsPage: React.FC = () => {
   const [limit, setLimit] = useState<number>(10);
   const [search, setSearch] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sort, setSort] = useState<string>('-createdAt');
 
   // Modal states
@@ -38,6 +39,11 @@ export const AdminsPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    setPage(1);
+  };
+
   const handleSortChange = (newSort: string) => {
     setSort(newSort);
     setPage(1);
@@ -51,11 +57,15 @@ export const AdminsPage: React.FC = () => {
   const handleResetFilters = () => {
     setSearch('');
     setDebouncedSearch('');
+    setStatusFilter('all');
     setSort('-createdAt');
     setPage(1);
   };
 
-  const hasActiveFilters = debouncedSearch.trim() !== '' || sort !== '-createdAt';
+  const hasActiveFilters =
+    debouncedSearch.trim() !== '' ||
+    statusFilter !== 'all' ||
+    sort !== '-createdAt';
 
   // Server-side paginated query
   const {
@@ -63,7 +73,8 @@ export const AdminsPage: React.FC = () => {
     isLoading,
     isError,
     error,
-    refetch
+    refetch,
+    isFetching
   } = useQuery({
     queryKey: [
       'admins',
@@ -71,6 +82,7 @@ export const AdminsPage: React.FC = () => {
         page,
         limit,
         search: debouncedSearch,
+        status: statusFilter,
         sort
       }
     ],
@@ -79,6 +91,7 @@ export const AdminsPage: React.FC = () => {
         page,
         limit,
         search: debouncedSearch,
+        status: statusFilter,
         sort
       }),
     staleTime: 1000 * 20,
@@ -112,13 +125,17 @@ export const AdminsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Controls Bar: Search & Sort Filter on the left, Separate Add Admin Button on the right */}
+      {/* Controls Bar: Search & Filter Drawer on the left, Separate Add Admin Button on the right */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
         <AdminFilterBar
           search={search}
           onSearchChange={setSearch}
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
           sort={sort}
           onSortChange={handleSortChange}
+          onRefresh={refetch}
+          isFetching={isFetching}
           onReset={handleResetFilters}
           hasActiveFilters={hasActiveFilters}
         />

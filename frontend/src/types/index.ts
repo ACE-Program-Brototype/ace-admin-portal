@@ -24,6 +24,7 @@ export interface AdminsQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  status?: string;
   role?: string;
   sort?: string;
 }
