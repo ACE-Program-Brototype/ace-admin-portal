@@ -10,7 +10,8 @@ import {
   Video,
   FileText,
   AlertCircle,
-  Loader2
+  Loader2,
+  ChevronDown
 } from 'lucide-react';
 
 interface UpdateEnquiryStatusModalProps {
@@ -145,8 +146,14 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
         <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-zinc-100">Change Status</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Candidate: <span className="text-zinc-200 font-medium">{submission.name}</span>
+            <p className="text-xs text-zinc-400 mt-1 flex flex-wrap items-center gap-1.5">
+              <span>Candidate: <span className="text-zinc-200 font-medium">{submission.name}</span></span>
+              <span className="text-zinc-600">•</span>
+              <span className="text-zinc-400">Current:</span>
+              <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getStatusConfig(currentStatus).badgeClass}`}>
+                <span className={`w-1 h-1 rounded-full ${getStatusConfig(currentStatus).dotClass}`} />
+                <span>{getStatusConfig(currentStatus).label}</span>
+              </span>
             </p>
           </div>
           <button
@@ -159,36 +166,42 @@ export const UpdateEnquiryStatusModal: React.FC<UpdateEnquiryStatusModalProps> =
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Status Selection */}
+          {/* Status Selection Dropdown */}
           {allowedTransitions.length > 0 ? (
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-2">
-                Change status
+              <label htmlFor="target-status-select" className="block text-xs font-medium text-zinc-300 mb-1.5">
+                New Status <span className="text-red-400">*</span>
               </label>
-              <div className="flex flex-wrap gap-2">
-                {allowedTransitions.map((target) => {
-                  const cfg = getStatusConfig(target);
-                  const isSelected = selectedTargetStatus === target;
-                  return (
-                    <button
-                      key={target}
-                      type="button"
-                      onClick={() => {
-                        setSelectedTargetStatus(target);
-                        setErrorMessage(null);
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer flex items-center space-x-1.5 ${
-                        isSelected
-                          ? 'border-zinc-200 bg-zinc-100 text-zinc-950 font-semibold shadow-xs'
-                          : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:bg-zinc-800 hover:text-white'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-zinc-950' : cfg.dotClass}`} />
-                      <span>{cfg.label}</span>
-                    </button>
-                  );
-                })}
+              <div className="relative">
+                <select
+                  id="target-status-select"
+                  value={selectedTargetStatus}
+                  onChange={(e) => {
+                    setSelectedTargetStatus(e.target.value as EnquiryLifecycleStatus);
+                    setErrorMessage(null);
+                  }}
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 focus:outline-none focus:border-zinc-600 transition cursor-pointer appearance-none pr-9"
+                >
+                  <option value="" disabled className="bg-zinc-900 text-zinc-500">
+                    -- Select new status --
+                  </option>
+                  {allowedTransitions.map((target) => {
+                    const cfg = getStatusConfig(target);
+                    return (
+                      <option key={target} value={target} className="bg-zinc-900 text-zinc-100 py-1">
+                        {cfg.label}
+                      </option>
+                    );
+                  })}
+                </select>
+                <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
+              {selectedTargetStatus && (
+                <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${getStatusConfig(selectedTargetStatus).dotClass}`} />
+                  <span>{getStatusConfig(selectedTargetStatus).description}</span>
+                </p>
+              )}
             </div>
           ) : (
             <div className="p-3 rounded-lg bg-zinc-950/70 border border-zinc-800 text-xs text-zinc-400">
